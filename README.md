@@ -1,2 +1,259 @@
-# Churn_Hackathon_ONE-Data_Science
-ChurnInsight: Previsão de Churn Modelo Random Forest (ROC-AUC 0.7669) prevê cancelamento de clientes via API FastAPI (/predict-model).  ✅ Pipeline completo + model.joblib pronto para backend. Demo no Colab.
+<h1 id="inicio" align="center">ChurnInsight — Data Science <br>
+<img src="https://img.shields.io/badge/Status-Em%20desenvolvimento-yellow" width="180" height="30" />
+</h1>
+
+---
+
+<h2 align="center">📑 Sumário</h2>
+
+- [Visão Geral do Projeto](#visao-geral)
+- [Propósito do Repositório](#proposito)
+- [Abordagem Geral de Data Science](#abordagem)
+- [Tecnologias e Ferramentas](#tecnologias)
+- [Estrutura do Repositório](#estrutura)
+- [Integração com o Backend](#integracao)
+- [Primeiros Entregáveis do Squad](#entregaveis)
+- [Pontos em Aberto / Decisões do Time](#decisoes)
+- [Como Executar a API de Modelo](#como-executar)
+- [Contribuições](#contribuicoes)
+
+---
+
+<h2 id="visao-geral" align="center">Visão Geral do Projeto</h2>
+
+O **ChurnInsight** é uma solução desenvolvida para prever a probabilidade de cancelamento de clientes (churn) em serviços de assinatura.  
+Este repositório abriga **toda a parte de Data Science**, incluindo análise exploratória, preparação de dados, treinamento do modelo e exposição de previsões via API Python.
+
+A proposta para o hackathon é entregar um **MVP funcional**, permitindo que o backend consulte a probabilidade de churn a partir de um JSON enviado pelo cliente.
+
+<p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
+
+---
+
+<h2 id="proposito" align="center">Propósito do Repositório</h2>
+
+Este repositório existe para consolidar:
+
+- A análise dos dados utilizada pelo squad DS.
+- O desenvolvimento do modelo preditivo.
+- O armazenamento do modelo final exportado.
+- A API Python responsável por expor previsões ao backend.
+- A documentação mínima necessária para execução e integração.
+
+Tudo aqui está em fase de definição conjunta do time. 
+
+O objetivo inicial é estabelecer uma base clara e organizada para o desenvolvimento.
+
+<p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
+
+---
+
+<h2 id="abordagem" align="center">Abordagem Geral de Data Science</h2>
+
+A abordagem adotada pelo time de Data Science para o MVP foi a seguinte:
+
+- **Pré-Processamento:** Remoção de colunas de identificação (`RowNumber`, `CustomerId`, `Surname`) e codificação de variáveis categóricas (`Geography` e `Gender`) utilizando **One-Hot Encoding**.
+
+- **Engenharia de Features**: Criação das variáveis compostas `Age_Tenure`, `Balance_Salary_Ratio` e a flag binária `High_Value_Customer` (calculada com medianas da base de **treino** apenas).
+
+- **Modelagem:** Utilização do algoritmo **Random Forest Classifier** (`n_estimators=200`, `class_weight={0:1, 1:3}`), escolhido por sua robustez e interpretabilidade.
+
+- **Tratamento de Desbalanceamento:** Parâmetro `class_weight={0: 1, 1: 3}` + **threshold de 0.35** para maximizar *Recall* da classe churn (47.91% no teste).
+
+- **Pipeline Completo:** Modelo final treinado em 8.000 amostras (treino+validação), avaliado em 2.000 de teste. **ROC-AUC: 0.7669 | Acurácia: 79.00%**.
+
+- **Serialização:** Pipeline completo (modelo + scaler + encoders + medianas) exportado via `joblib` em `model/model.joblib`.
+
+<p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
+
+---
+
+<h2 id="tecnologias" align="center">Tecnologias e Ferramentas</h2>
+
+As tecnologias previstas incluem:
+
+- 🐍 **Python 3**  
+- 📊 **Pandas**, **NumPy**, **Seaborn**, **Matplotlib**
+- 🤖 **Scikit-learn** (modelagem, pré-processamento e métricas)
+- 🧪 **Jupyter Notebook** / **Google Colab** (ambiente de desenvolvimento)  
+- 🌐 **FastAPI** (API para servir o modelo)  
+- 🔧 **Uvicorn** (servidor ASGI) + **ngrok** (tunnel público)
+
+Ferramentas de apoio:
+- **GitHub** para versionamento e colaboração  
+- **joblib** para serialização do pipeline
+
+<p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
+
+---
+
+<h2 id="estrutura" align="center">Estrutura do Repositório</h2>
+
+A estrutura abaixo é um **ponto de partida** e deve evoluir conforme decisões do squad:
+
+```plaintext
+notebooks/               # Análises iniciais e experimentos
+data/
+ ├── raw/                # Dados brutos
+ └── processed/          # Dados transformados (opcional)
+model/
+ └── model.joblib        # Modelo exportado (quando disponível)
+api/
+ ├── app.py              # API em Python para servir previsões
+ └── requirements.txt    # Dependências da API
+README.md
+```
+Links adicionais podem ser adicionados conforme a documentação evoluir.
+
+<p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
+
+---
+<h2 id="dicionario" align="center">Dicionário de Dados</h2>
+
+### 📊 Dicionário de Dados
+
+| Coluna Original   |                 Significado                 |
+|-------------------|---------------------------------------------|
+| RowNumber         | Número da linha no conjunto de dados.       |
+| Customer ID       | Identificador único de cada cliente.        |
+| Surname           | Sobrenome do cliente.                       |
+| CreditScore       | Indicador financeiro |
+| Geography         | Localização geográfica do cliente.          |
+| Gender            | Gênero (Male/Female)           |
+| Age               | Idade do cliente.                           |
+| Tenure            | Tempo de permanência (0-10 anos).  |
+| Balance           | Saldo em conta.                  |
+| EstimatedSalary   | Estimativa de salário anual.           |
+| Exited            | **Target:** 1=Churn, 0=Permanece (20.37%)|
+
+
+<p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
+
+---
+
+<h2 id="fonte-dados" align="center">Fonte dos Dados</h2>
+
+Os dados utilizados neste projeto foram obtidos no Kaggle, no seguinte dataset público:
+
+**🔗 Customer Churn (Willian Oliveira)** https://www.kaggle.com/datasets/willianoliveiragibin/customer-churn/data/code
+
+O arquivo utilizado pelo squad DS é:
+
+`Customer Churn new.csv` (armazenado internamente em `data/raw/`)
+
+---
+
+<h2 id="integracao" align="center">Integração com o Backend</h2>
+
+A comunicação entre DS e Backend ocorrerá via API Python, que deve receber um JSON contendo informações do cliente e retornar:
+
+- previsão textual (“Vai cancelar” ou “Vai continuar”)
+- probabilidade numérica associada ao churn
+
+Exemplo previsto de payload (sujeito a alterações):
+
+📥 Entrada
+```json
+{
+  "CreditScore": 650,
+  "Geography": "France",
+  "Gender": "Male",
+  "Age": 40,
+  "Tenure": 5,
+  "Balance": 60000,
+  "EstimatedSalary": 80000
+}
+
+```
+
+📤 Saída
+
+```json
+{
+"previsao": "Vai continuar",
+"probabilidade": 0.24,
+"nivel_risco": "BAIXO",
+"recomendacao": "Cliente estável - manutenção padrão"
+}
+```
+
+O contrato final será definido junto ao squad backend assim que a primeira versão do modelo estiver disponível.
+
+<p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
+
+---
+
+<h2 id="entregaveis" align="center">Primeiros Entregáveis do Squad</h2>
+
+Rascunho dos principais entregáveis iniciais:
+
+✅ **Concluídos:**
+
+- [x] Notebook completo com EDA + modelagem
+
+- [x] Pipeline com features derivadas (sem leakage)  
+
+- [x] **Modelo final serializado** (`model/model.joblib`)
+
+- [x] API FastAPI funcional (Colab + ngrok)
+
+- [x] Documentação com métricas e contrato JSON
+
+
+⏳ **Em progresso:** Integração backend + apresentação
+
+**Esses itens serão refinados com o decorrer do hackathon.**
+
+<p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
+
+---
+
+<h2 id="decisoes" align="center">Pontos em Aberto / Decisões Pendentes</h2>
+
+| Tema                  | Decisão Final                          | Impacto                          |
+|-----------------------|----------------------------------------|----------------------------------|
+| **Encoding**    | **One-Hot Encoding** (3 colunas dummy) | Melhor performance que LabelEnc |
+| **Threshold**   | **0.35** (otimizado para Recall) | Recall 47.91% |Precisão 48.39%   |
+| **Features leakage** | Medianas calculadas **apenas no treino** |Boas práticas ML garantidas |
+| **Top Features** | Age (24.6%) > Salary (14.5%) > CreditScore | Foco estratégico correto |
+
+
+ **🏆 Métricas Finais (Teste):** ROC-AUC 0.7669 | Acurácia 79.00%
+
+
+**Estas decisões serão registradas neste README conforme forem tomadas.**
+
+<p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
+
+---
+
+<h2 id="como-executar" align="center">Como Executar a API de Modelo</h2>
+
+Estes são passos gerais; poderão ser ajustados conforme a implementação:
+1. Instalar dependências
+```bash
+pip install -r api/requirements.txt
+```
+2. Rodar o serviço
+```bash
+uvicorn api.app:app --reload
+```
+A API ficará disponível em:
+```bash
+http://localhost:8000/predict-model
+```
+
+<p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
+
+---
+
+<h2 id="contribuicoes" align="center">Contribuições</h2>
+
+Contribuições do squad - Para colaborar:
+1. Crie uma branch (git checkout -b feature/nome-da-feature)
+2. Faça suas alterações
+3. Envie um Pull Request descrevendo o que foi modificado
+
+Durante o hackathon, manteremos comunicação constante para evitar conflitos ou trabalho duplicado.
+
+<p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
