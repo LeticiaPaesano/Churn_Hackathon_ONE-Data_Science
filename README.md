@@ -92,18 +92,19 @@ Ferramentas de apoio:
 A estrutura abaixo é um **ponto de partida** e deve evoluir conforme decisões do squad:
 
 ```plaintext
-notebooks/               # Análises iniciais e experimentos
-data/
- ├── raw/                # Dados brutos
- └── processed/          # Dados transformados (opcional)
-model/
- └── model.joblib        # Modelo exportado (quando disponível)
 api/
- ├── app.py              # API em Python para servir previsões
- └── requirements.txt    # Dependências da API
+ ├── model/
+ │ └── model.joblib            # Modelo exportado (dentro da API)
+ ├── main.py                   # Arquivo principal da API FastAPI
+ ├── __init__.py               # Módulo Python da API
+ └── requirements.txt          # Dependências da API
+Churn_hackathon_ONE_Data_Science.ipynb           # Notebook 
+Customer Churn new.csv                          # Dados brutos (origem)
 README.md
 ```
 Links adicionais podem ser adicionados conforme a documentação evoluir.
+
+*A estrutura final do repositório reflete a implantação da API*
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
@@ -229,19 +230,23 @@ Rascunho dos principais entregáveis iniciais:
 
 <h2 id="como-executar" align="center">Como Executar a API de Modelo</h2>
 
-Estes são passos gerais; poderão ser ajustados conforme a implementação:
-1. Instalar dependências
-```bash
-pip install -r api/requirements.txt
-```
-2. Rodar o serviço
-```bash
-uvicorn api.app:app --reload
-```
-A API ficará disponível em:
-```bash
-http://localhost:8000/predict-model
-```
+Estes são passos gerais necessários para rodar a API de previsões; poderão ser ajustados conforme a implementação:
+
+1.  **Instalar dependências**
+    ```bash
+    pip install -r api/requirements.txt
+    ```
+2.  **Rodar o serviço Uvicorn (na raiz do projeto)**
+    ```bash
+    uvicorn api.main:app --reload
+    ```
+3.  **Acessar a Documentação**
+    A API ficará disponível na porta 8000. Acesse a documentação interativa (Swagger UI) em:
+    ```
+    http://localhost:8000/docs
+    ```
+   * (No Codespaces, use o Endereço Público encaminhado para a porta 8000. Não esquecer de acrescentar ao final do link \docs)*
+
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
