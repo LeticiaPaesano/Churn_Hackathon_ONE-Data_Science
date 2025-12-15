@@ -140,7 +140,7 @@ Os dados utilizados neste projeto foram obtidos no Kaggle, no seguinte dataset p
 
 O arquivo utilizado pelo squad DS é:
 
-`Customer Churn new.csv` (armazenado internamente em `data/raw/`)
+`Customer Churn new.csv` 
 
 ---
 
