@@ -2,6 +2,20 @@
 <img src="https://img.shields.io/badge/Status-Em%20desenvolvimento-yellow" width="180" height="30" />
 </h1>
 
+<h2 id="inicio" align="center">🔗 ChurnInsight — Data Science</h2>
+
+Este repositório contém o desenvolvimento do modelo preditivo utilizado pela
+plataforma **ChurnInsight**, criada durante o **Hackathon da Alura**.
+
+Aqui estão concentrados os trabalhos de **análise de dados, engenharia de features,
+treinamento do modelo e a API Python (FastAPI)** responsável por expor as previsões
+consumidas pela aplicação.
+
+📘 A documentação completa do projeto, incluindo visão geral, arquitetura e integração
+entre os squads, está disponível no repositório principal:
+
+**👉 [Backend — ChurnInsight](https://github.com/renancvitor/churninsight-backend-h12-25b)**
+
 ---
 
 <h2 align="center">📑 Sumário</h2>
