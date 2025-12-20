@@ -192,11 +192,31 @@ Exemplo previsto de payload (sujeito a alterações):
 }
 ```
 
-O contrato final será definido junto ao squad backend assim que a primeira versão do modelo estiver disponível.
+⚠️ O contrato final será validado em conjunto com o squad Back-end.
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
 ---
+
+<h2 id="Métricas" align="center">Métricas e Resultados do Modelo (Teste)</h2>
+
+**ROC-AUC:** 0.7669
+
+**Acurácia:** 79.00%
+
+**Recall (Churn):** 47.91%
+
+**Precisão (Churn):** 48.39%
+
+**Threshold:** 0.35
+
+**🎯 Critério de sucesso:** priorização do Recall para reduzir falsos negativos (clientes que cancelariam sem intervenção).
+
+<p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
+
+---
+
+
 
 <h2 id="entregaveis" align="center">Primeiros Entregáveis do Squad</h2>
 
