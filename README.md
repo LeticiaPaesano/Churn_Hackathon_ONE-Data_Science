@@ -16,6 +16,8 @@ entre os squads, está disponível no repositório principal:
 
 **👉 [Backend — ChurnInsight](https://github.com/renancvitor/churninsight-backend-h12-25b)**
 
+**🚀 [API em produção (Render)](https://churn-hackathon.onrender.com)**
+
 ---
 
 <h2 align="center">📑 Sumário</h2>
@@ -68,15 +70,15 @@ A abordagem adotada pelo time de Data Science para o MVP foi a seguinte:
 
 - **Pré-Processamento:** Remoção de colunas de identificação (`RowNumber`, `CustomerId`, `Surname`) e codificação de variáveis categóricas (`Geography` e `Gender`) utilizando **One-Hot Encoding**.
 
-- **Engenharia de Features**: Criação das variáveis compostas `Age_Tenure`, `Balance_Salary_Ratio` e a flag binária `High_Value_Customer` (calculada com medianas da base de **treino** apenas).
+- **Engenharia de Features**: Criação das variáveis compostas `Age_Tenure`, `Balance_Salary_Ratio` e a flag `High_Value_Customer`, calculada exclusivamente a partir das medianas do conjunto de treino.
 
-- **Modelagem:** Utilização do algoritmo **Random Forest Classifier** (`n_estimators=200`, `class_weight={0:1, 1:3}`), escolhido por sua robustez e interpretabilidade.
+- **Modelagem:** Utilização do algoritmo **Random Forest Classifier** (`n_estimators=200`, `class_weight={0:1, 1:3}`), priorizando robustez, estabilidade e interpretabilidade.
 
-- **Tratamento de Desbalanceamento:** Parâmetro `class_weight={0: 1, 1: 3}` + **threshold de 0.35** para maximizar *Recall* da classe churn (47.91% no teste).
+- **Desbalanceamento:** Ajuste de `class_weight={0: 1, 1: 3}` e definição de **threshold = 0.35**, priorizando Recall da classe churn.
 
-- **Pipeline Completo:** Modelo final treinado em 8.000 amostras (treino+validação), avaliado em 2.000 de teste. **ROC-AUC: 0.7669 | Acurácia: 79.00%**.
+- **Pipeline Completo:** Treinamento, validação e teste encapsulados em um único pipeline, evitando data leakage.
 
-- **Serialização:** Pipeline completo (modelo + scaler + encoders + medianas) exportado via `joblib` em `model/model.joblib`.
+- **Serialização:** Pipeline final exportado com `joblib` em `models/model.joblib`.
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
@@ -86,16 +88,27 @@ A abordagem adotada pelo time de Data Science para o MVP foi a seguinte:
 
 As tecnologias previstas incluem:
 
-- 🐍 **Python 3**  
-- 📊 **Pandas**, **NumPy**, **Seaborn**, **Matplotlib**
-- 🤖 **Scikit-learn** (modelagem, pré-processamento e métricas)
-- 🧪 **Jupyter Notebook** / **Google Colab** (ambiente de desenvolvimento)  
-- 🌐 **FastAPI** (API para servir o modelo)  
-- 🔧 **Uvicorn** (servidor ASGI) + **ngrok** (tunnel público)
+- **🐍 Python 3**
+
+- **📊 pandas 2.3.3**, **numpy 2.4.0**
+
+- **🤖 scikit-learn 1.8.0** (modelagem, pré-processamento e métricas)
+
+- **💾 joblib 1.5.3** (serialização do pipeline)
+
+- **🧪 Jupyter Notebook / Google Colab** (desenvolvimento)
+
+- **🌐 FastAPI 0.127.0** (API de inferência)
+
+- **🔧 Uvicorn 0.40.0** (servidor ASGI)
+
+- **📦 pyarrow 22.0.0** (leitura de dados Parquet)
 
 Ferramentas de apoio:
-- **GitHub** para versionamento e colaboração  
-- **joblib** para serialização do pipeline
+
+- **GitHub** (versionamento e colaboração)
+
+- **Render** (deploy da API)
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
@@ -106,15 +119,22 @@ Ferramentas de apoio:
 A estrutura abaixo é um **ponto de partida** e deve evoluir conforme decisões do squad:
 
 ```plaintext
-api/
- ├── model/
- │ └── model.joblib            # Modelo exportado (dentro da API)
- ├── main.py                   # Arquivo principal da API FastAPI
- ├── __init__.py               # Módulo Python da API
- └── requirements.txt          # Dependências da API
-Churn_hackathon_ONE_Data_Science.ipynb           # Notebook 
-Customer Churn new.csv                          # Dados brutos (origem)
+app/
+ ├── __init__.py
+ ├── __pycache__/
+ └── main.py              # API FastAPI 
+
+data/
+ ├── Churn.csv            # Dados brutos (origem)
+ └── dataset.parquet
+
+models/
+ └── model.joblib         # Pipeline serializado
+
+notebooks/
+ └── Churn_Hackathon.ipynb
 README.md
+requirements.txt
 ```
 Links adicionais podem ser adicionados conforme a documentação evoluir.
 
@@ -150,7 +170,7 @@ Links adicionais podem ser adicionados conforme a documentação evoluir.
 
 Os dados utilizados neste projeto foram obtidos no Kaggle, no seguinte dataset público:
 
-**🔗 Customer Churn (Willian Oliveira)** https://www.kaggle.com/datasets/willianoliveiragibin/customer-churn/data/code
+**🔗 Customer Churn [Willian Oliveira](https://www.kaggle.com/datasets/willianoliveiragibin/customer-churn/data/code)** 
 
 O arquivo utilizado pelo squad DS é:
 
