@@ -288,11 +288,11 @@ Estes são passos gerais necessários para rodar a API de previsões; poderão s
 
 1.  **Instalar dependências**
     ```bash
-    pip install -r api/requirements.txt
+    pip install -r requirements.txt
     ```
 2.  **Rodar o serviço Uvicorn (na raiz do projeto)**
     ```bash
-    uvicorn api.main:app --reload
+    uvicorn app.main:app --reload
     ```
 3.  **Acessar a Documentação**
     A API ficará disponível na porta 8000. Acesse a documentação interativa (Swagger UI) em:
