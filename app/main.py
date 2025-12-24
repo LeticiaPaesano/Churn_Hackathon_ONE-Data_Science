@@ -1,3 +1,7 @@
+import logging
+
+logging.getLogger("uvicorn.error").setLevel(logging.ERROR)
+logging.getLogger("uvicorn.access").setLevel(logging.ERROR)
 import os
 import joblib
 import pandas as pd
