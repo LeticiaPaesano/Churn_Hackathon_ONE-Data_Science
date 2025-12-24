@@ -294,14 +294,29 @@ Estes são passos gerais necessários para rodar a API de previsões; poderão s
     ```bash
     uvicorn app.main:app --reload
     ```
-3.  **Acessar a Documentação**
+    O parâmetro --reload é recomendado apenas para ambiente de desenvolvimento.
+    
+4.  **Acessar a Documentação**
     A API ficará disponível na porta 8000. Acesse a documentação interativa (Swagger UI) em:
     ```
     http://localhost:8000/docs
     ```
-   * (No Codespaces, use o Endereço Público encaminhado para a porta 8000. Não esquecer de acrescentar ao final do link \docs)*
+***Em ambientes como GitHub Codespaces, utilize o endereço público associado à porta 8000 e acrescente /docs ao final da URL.***
 
+---
 
+## 🌐 Conexão com o deploy em produção (Render)
+
+É altamente recomendável **complementar essa seção** com um apontamento direto para produção, por exemplo:
+
+```markdown
+### 🚀 API em Produção
+
+A aplicação também está disponível em ambiente de produção, hospedada na plataforma **Render**:
+
+https://churn-hackathon.onrender.com/docs
+
+```
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
 ---
