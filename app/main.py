@@ -20,12 +20,7 @@ logging.getLogger("uvicorn.access").setLevel(logging.ERROR)
 # =========================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-MODEL_PATHS_TO_TRY = [
-    os.path.join(BASE_DIR, "..", "models", "model.joblib"),
-    os.path.join(BASE_DIR, "..", "model", "model.joblib"),
-    os.path.join(BASE_DIR, "model.joblib"),
-]
+MODEL_PATH = os.path.join(BASE_DIR, "models", "model.joblib")
 
 artifacts: dict = {}
 
@@ -35,20 +30,13 @@ artifacts: dict = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    model_path = None
-
-    for path in MODEL_PATHS_TO_TRY:
-        if os.path.exists(path):
-            model_path = path
-            break
-
-    if model_path is None:
+    if not os.path.exists(MODEL_PATH):
         raise RuntimeError(
-            f"Modelo não encontrado. Caminhos verificados: {MODEL_PATHS_TO_TRY}"
+            f"Modelo não encontrado em {MODEL_PATH}"
         )
 
     try:
-        loaded = joblib.load(model_path)
+        loaded = joblib.load(MODEL_PATH)
 
         artifacts["model"] = loaded["model"]
         artifacts["scaler"] = loaded["scaler"]
@@ -57,7 +45,7 @@ async def lifespan(app: FastAPI):
         artifacts["balance_median"] = loaded.get("balance_median", 0.0)
         artifacts["salary_median"] = loaded.get("salary_median", 0.0)
 
-        print(f"✅ Modelo carregado com sucesso: {model_path}")
+        print(f"✅ Modelo carregado com sucesso: {MODEL_PATH}")
         yield
 
     except Exception as exc:
@@ -75,7 +63,7 @@ app = FastAPI(
 )
 
 # =========================================================
-# CONTRATOS DA API (ALINHADOS AO BACKEND)
+# CONTRATOS DA API — ALINHADOS AO BACKEND
 # =========================================================
 
 class CustomerInput(BaseModel):
@@ -118,7 +106,7 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
         # 1. Entrada → DataFrame
         df = pd.DataFrame([data.model_dump()])
 
-        # 2. Feature Engineering
+        # 2. Feature Engineering (idêntico ao treino)
         df["Balance_Salary_Ratio"] = df["Balance"] / (df["EstimatedSalary"] + 1)
         df["Age_Tenure"] = df["Age"] * df["Tenure"]
 
@@ -127,7 +115,7 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
             & (df["EstimatedSalary"] > artifacts["salary_median"])
         ).astype(int)
 
-        # 3. One-Hot Encoding manual (contrato fixo com o modelo)
+        # 3. One-Hot Encoding manual (contrato fixo)
         for col in ["Geography_Germany", "Geography_Spain", "Gender_Male"]:
             df[col] = 0
 
