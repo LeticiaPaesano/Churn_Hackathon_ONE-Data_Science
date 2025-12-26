@@ -121,18 +121,16 @@ A estrutura abaixo é um **ponto de partida** e deve evoluir conforme decisões 
 ```plaintext
 app/
  ├── __init__.py
- ├── __pycache__/
  └── main.py              # API FastAPI 
-
+ └── models/
+     └── model.joblib     # Pipeline serializado
 data/
  ├── Churn.csv            # Dados brutos (origem)
  └── dataset.parquet
 
-models/
- └── model.joblib         # Pipeline serializado
-
 notebooks/
  └── Churn_Hackathon.ipynb
+.gitignore
 README.md
 requirements.txt
 ```
