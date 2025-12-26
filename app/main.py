@@ -75,7 +75,7 @@ app = FastAPI(
 )
 
 # =========================================================
-# CONTRATOS DA API
+# CONTRATOS DA API (ALINHADOS AO BACKEND)
 # =========================================================
 
 class CustomerInput(BaseModel):
@@ -115,7 +115,7 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
         raise HTTPException(status_code=503, detail="Modelo não carregado.")
 
     try:
-        # 1. Entrada → DataFrame (Pydantic v2)
+        # 1. Entrada → DataFrame
         df = pd.DataFrame([data.model_dump()])
 
         # 2. Feature Engineering
@@ -127,7 +127,7 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
             & (df["EstimatedSalary"] > artifacts["salary_median"])
         ).astype(int)
 
-        # 3. One-Hot Encoding manual
+        # 3. One-Hot Encoding manual (contrato fixo com o modelo)
         for col in ["Geography_Germany", "Geography_Spain", "Gender_Male"]:
             df[col] = 0
 
