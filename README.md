@@ -16,7 +16,7 @@ entre os squads, está disponível no repositório principal:
 
 **👉 [Backend — ChurnInsight](https://github.com/renancvitor/churninsight-backend-h12-25b)**
 
-**🚀 [API em produção (Render)](https://churn-hackathon.onrender.com\docs)**
+**🚀 [API em produção (Render)](https://churn-hackathon.onrender.com)\docs**
 
 ---
 
