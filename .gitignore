@@ -1,4 +1,14 @@
-# Artefatos locais de notebooks
-notebooks/dataset.parquet
+# Notebooks e artefatos locais
+notebooks/*.parquet
 notebooks/model/
 Churn_Hackathon.ipynb
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# Ambientes virtuais
+.env
+.venv
+venv/
+
