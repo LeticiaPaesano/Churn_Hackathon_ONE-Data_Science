@@ -172,3 +172,17 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
             status_code=500,
             detail=f"Erro na predição: {str(e)}"
         )
+@app.get("/debug/model")
+def debug_model():
+    """Retorna os metadados do modelo carregado para conferência"""
+    return {
+        "status_carregamento": "OK" if "model" in artifacts else "ERRO",
+        "model_type": str(type(artifacts.get("model"))),
+        "scaler_presente": "scaler" in artifacts,
+        "colunas_esperadas": artifacts.get("columns", []),
+        "threshold_atual": artifacts.get("threshold"),
+        "medianas_calculadas": {
+            "balance": artifacts.get("balance_median"),
+            "salary": artifacts.get("salary_median")
+        }
+    }
