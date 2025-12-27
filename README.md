@@ -88,27 +88,27 @@ A abordagem adotada pelo time de Data Science para o MVP foi a seguinte:
 
 As tecnologias previstas incluem:
 
-- **🐍 Python 3**
+- **🐍 Python** 3
 
-- **📊 pandas 2.3.3**, **numpy 2.4.0**
+- **📊 pandas** 2.3.3 e **numpy** 2.4.0
 
-- **🤖 scikit-learn 1.8.0** (modelagem, pré-processamento e métricas)
+- **🤖 scikit-learn** 1.8.0 — modelagem, pré-processamento e métricas
 
-- **💾 joblib 1.5.3** (serialização do pipeline)
+- **💾 joblib** 1.5.3 — serialização do pipeline de ML
 
-- **🧪 Jupyter Notebook / Google Colab** (desenvolvimento)
+- **🌐 FastAPI** 0.127.0 — API de inferência
 
-- **🌐 FastAPI 0.127.0** (API de inferência)
+- **🔧 Uvicorn** 0.40.0 — servidor ASGI
 
-- **🔧 Uvicorn 0.40.0** (servidor ASGI)
-
-- **📦 pyarrow 22.0.0** (leitura de dados Parquet)
+- **📦 pyarrow** 22.0.0 — leitura e escrita de dados em formato Parquet
 
 Ferramentas de apoio:
 
-- **GitHub** (versionamento e colaboração)
+- **🧪 Jupyter Notebook / Google Colab** — desenvolvimento, EDA e experimentação
 
-- **Render** (deploy da API)
+- **🔗 Git & GitHub** — versionamento de código e colaboração em equipe
+
+- **☁️ Render** — deploy e hospedagem da API em produção
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
@@ -172,7 +172,7 @@ Os dados utilizados neste projeto foram obtidos no Kaggle, no seguinte dataset p
 
 O arquivo utilizado pelo squad DS é:
 
-`Customer Churn new.csv` 
+`Churn new.csv` 
 
 ---
 
@@ -299,6 +299,7 @@ Estes são passos gerais necessários para rodar a API de previsões; poderão s
     ```
     http://localhost:8000/docs
     ```
+
 ***Em ambientes como GitHub Codespaces, utilize o endereço público associado à porta 8000 e acrescente /docs ao final da URL.***
 
 ---
