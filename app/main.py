@@ -63,7 +63,7 @@ app = FastAPI(
 )
 
 # =========================================================
-# FUNÇÃO AUXILIAR DE NEGÓCIO: CLASSIFICAÇÃO SERASA
+# FUNÇÕES DE APOIO
 # =========================================================
 def classificar_faixa_score(score: int) -> str:
     """Classificação de crédito baseada em faixas de mercado."""
@@ -82,23 +82,19 @@ def gerar_recomendacao(nivel_risco: str) -> str:
 # =========================================================
 # CONTRATOS DA API — ALINHADOS AO BACKEND
 # =========================================================
-
 class CustomerInput(BaseModel):
-# Surname adicionado conforme pedido do backend (não será usado no modelo)
     Surname: str = Field(..., description="Sobrenome do cliente") 
-# Validações de limites técnicos e de negócio
-    CreditScore: int = Field(..., ge=0, le=1000, description=""Score de crédito: 0 a 1000")
+    CreditScore: int = Field(..., ge=0, le=1000, description="Score de crédito: 0 a 1000")
     Geography: Literal["France", "Germany", "Spain"]
     Gender: Literal["Male", "Female"]
     Age: int = Field(..., ge=18, le=92)
     Tenure: int = Field(..., ge=0, le=10)
     Balance: float = Field(..., ge=0, le=500000.0)
-    EstimatedSalary: float = Field(..., ge=523.0, le=500000.0)
-
+    EstimatedSalary: float = Field(..., ge=0, le=500000.0)
 
 class PredictionOutput(BaseModel):
-    surname: str # Retornamos o sobrenome para o backend identificar o cliente
-    credit_score_class: str
+    surname: str 
+    classificacao_score: str
     previsao: str
     probabilidade: float
     nivel_risco: str
