@@ -63,32 +63,14 @@ app = FastAPI(
 )
 
 # =========================================================
-# CONTRATOS DA API — ALINHADOS AO BACKEND
+# FUNÇÃO AUXILIAR DE NEGÓCIO: CLASSIFICAÇÃO SERASA
 # =========================================================
-
-class CustomerInput(BaseModel):
-# Surname adicionado conforme pedido do backend (não será usado no modelo)
-    Surname: str = Field(..., description="Sobrenome do cliente") 
-# Validações de limites técnicos e de negócio
-    CreditScore: int = Field(..., ge=0, le=1000, description="Faixa Serasa: 0 a 1000")
-    Geography: Literal["France", "Germany", "Spain"]
-    Gender: Literal["Male", "Female"]
-    Age: int = Field(..., ge=18, le=92)
-    Tenure: int = Field(..., ge=0, le=10)
-    Balance: float = Field(..., ge=0, le=99986.98)
-    EstimatedSalary: float = Field(..., ge=523.0, le=99984.86)
-
-
-class PredictionOutput(BaseModel):
-    surname: str # Retornamos o sobrenome para o backend identificar o cliente
-    previsao: str
-    probabilidade: float
-    nivel_risco: str
-    recomendacao: str
-
-# =========================================================
-# REGRAS DE NEGÓCIO
-# =========================================================
+def classificar_faixa_score(score: int) -> str:
+    """Classificação de crédito baseada em faixas de mercado."""
+    if score >= 701: return "Excelente"
+    if score >= 501: return "Bom"
+    if score >= 301: return "Regular"
+    return "Baixo"
 
 def gerar_recomendacao(nivel_risco: str) -> str:
     if nivel_risco == "ALTO":
@@ -96,6 +78,31 @@ def gerar_recomendacao(nivel_risco: str) -> str:
     if nivel_risco == "MÉDIO":
         return "Monitoramento recomendado e campanhas de retenção"
     return "Cliente estável - manutenção padrão"
+    
+# =========================================================
+# CONTRATOS DA API — ALINHADOS AO BACKEND
+# =========================================================
+
+class CustomerInput(BaseModel):
+# Surname adicionado conforme pedido do backend (não será usado no modelo)
+    Surname: str = Field(..., description="Sobrenome do cliente") 
+# Validações de limites técnicos e de negócio
+    CreditScore: int = Field(..., ge=0, le=1000, description=""Score de crédito: 0 a 1000")
+    Geography: Literal["France", "Germany", "Spain"]
+    Gender: Literal["Male", "Female"]
+    Age: int = Field(..., ge=18, le=92)
+    Tenure: int = Field(..., ge=0, le=10)
+    Balance: float = Field(..., ge=0, le=500000.0)
+    EstimatedSalary: float = Field(..., ge=523.0, le=500000.0)
+
+
+class PredictionOutput(BaseModel):
+    surname: str # Retornamos o sobrenome para o backend identificar o cliente
+    credit_score_class: str
+    previsao: str
+    probabilidade: float
+    nivel_risco: str
+    recomendacao: str
 
 # =========================================================
 # ENDPOINT PRINCIPAL
@@ -110,7 +117,8 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
     # 1. Entrada → Dicionário e Extração de metadados
         input_dict = data.model_dump()
         cliente_surname = input_dict.pop("Surname") # Removemos para não entrar no DataFrame do modelo
-       
+        valor_score = input_dict["CreditScore"] # Pegamos o valor para classificar
+        
         # 2. DataFrame para processamento
         df = pd.DataFrame([input_dict])
 
@@ -142,17 +150,16 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
                 status_code=500,
                 detail=f"Features ausentes no input: {missing_cols}",
             )
-        # Reordenar colunas conforme esperado pelo scaler/model
+            
+        # 6. REORDENAÇÃO E ESCALONAMENTO
         df_final = df[artifacts["columns"]]
-
-        # 6. Escalonamento
         X_input = artifacts["scaler"].transform(df_final)
 
-        # 7. Predição
+        # 7. Predição e Risco
         proba = float(artifacts["model"].predict_proba(X_input)[0, 1])
         threshold = artifacts["threshold"]
         
-        # Lógica de Nível de Risco baseada no threshold dinâmico do artefato
+        # Nível de Risco 
         if proba >= threshold:
             nivel_risco = "ALTO"
         elif proba >= threshold * 0.7:
@@ -162,9 +169,10 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
 
         previsao = "Vai cancelar" if proba >= threshold else "Vai continuar"
 
-        # Retorno incluindo o surname solicitado
+        # 8. RESPOSTA FINAL
         return PredictionOutput(
             surname=cliente_surname,
+            classificacao_score=classificar_faixa_score(valor_score),
             previsao=previsao,
             probabilidade=round(proba, 4),
             nivel_risco=nivel_risco,
@@ -180,7 +188,7 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
         )
 
 # =========================================================
-# ENDPOINT DE DEBUG CONTROLADO
+# ENDPOINT DE DEBUG 
 # =========================================================
 
 @app.get("/debug/model")
