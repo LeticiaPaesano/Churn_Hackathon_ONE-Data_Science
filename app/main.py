@@ -6,7 +6,7 @@ from typing import Literal
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # =========================================================
 # LOGGING — REDUÇÃO DE RUÍDO EM PRODUÇÃO
@@ -67,16 +67,20 @@ app = FastAPI(
 # =========================================================
 
 class CustomerInput(BaseModel):
-    CreditScore: int
+# Surname adicionado conforme pedido do backend (não será usado no modelo)
+    Surname: str = Field(..., description="Sobrenome do cliente") 
+# Validações de limites técnicos e de negócio
+    CreditScore: int = Field(..., ge=0, le=1000, description="Faixa Serasa: 0 a 1000")
     Geography: Literal["France", "Germany", "Spain"]
     Gender: Literal["Male", "Female"]
-    Age: int
-    Tenure: int
-    Balance: float
-    EstimatedSalary: float
+    Age: int = Field(..., ge=18, le=92)
+    Tenure: int = Field(..., ge=0, le=10)
+    Balance: float = Field(..., ge=0, le=99986.98)
+    EstimatedSalary: float = Field(..., ge=523.0, le=99984.86)
 
 
 class PredictionOutput(BaseModel):
+    surname: str # Retornamos o sobrenome para o backend identificar o cliente
     previsao: str
     probabilidade: float
     nivel_risco: str
@@ -103,10 +107,14 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
         raise HTTPException(status_code=503, detail="Modelo não carregado.")
 
     try:
-        # 1. Entrada → DataFrame
-        df = pd.DataFrame([data.model_dump()])
+    # 1. Entrada → Dicionário e Extração de metadados
+        input_dict = data.model_dump()
+        cliente_surname = input_dict.pop("Surname") # Removemos para não entrar no DataFrame do modelo
+       
+        # 2. DataFrame para processamento
+        df = pd.DataFrame([input_dict])
 
-        # 2. Feature Engineering (idêntico ao treino)
+        # 3. Feature Engineering (idêntico ao treino)
         df["Balance_Salary_Ratio"] = df["Balance"] / (df["EstimatedSalary"] + 1)
         df["Age_Tenure"] = df["Age"] * df["Tenure"]
 
@@ -115,7 +123,7 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
             & (df["EstimatedSalary"] > artifacts["salary_median"])
         ).astype(int)
 
-        # 3. One-Hot Encoding manual (contrato fixo)
+        # 4. One-Hot Encoding manual (contrato fixo)
         for col in ["Geography_Germany", "Geography_Spain", "Gender_Male"]:
             df[col] = 0
 
@@ -127,23 +135,24 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
         if data.Gender == "Male":
             df["Gender_Male"] = 1
 
-        # 4. Validação de features
+        # 5. Validação de features
         missing_cols = set(artifacts["columns"]) - set(df.columns)
         if missing_cols:
             raise HTTPException(
                 status_code=500,
                 detail=f"Features ausentes no input: {missing_cols}",
             )
-
+        # Reordenar colunas conforme esperado pelo scaler/model
         df_final = df[artifacts["columns"]]
 
-        # 5. Escalonamento
+        # 6. Escalonamento
         X_input = artifacts["scaler"].transform(df_final)
 
-        # 6. Predição
+        # 7. Predição
         proba = float(artifacts["model"].predict_proba(X_input)[0, 1])
         threshold = artifacts["threshold"]
-
+        
+        # Lógica de Nível de Risco baseada no threshold dinâmico do artefato
         if proba >= threshold:
             nivel_risco = "ALTO"
         elif proba >= threshold * 0.7:
@@ -153,7 +162,9 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
 
         previsao = "Vai cancelar" if proba >= threshold else "Vai continuar"
 
+        # Retorno incluindo o surname solicitado
         return PredictionOutput(
+            surname=cliente_surname,
             previsao=previsao,
             probabilidade=round(proba, 4),
             nivel_risco=nivel_risco,
