@@ -5,18 +5,15 @@
 <h2 id="inicio" align="center">🔗 ChurnInsight — Data Science</h2>
 
 Este repositório contém o desenvolvimento do modelo preditivo utilizado pela
-plataforma **ChurnInsight**, criada durante o **Hackathon da Alura**.
+plataforma **ChurnInsight**, criada durante o **Hackathon da Alura**. Aqui estão concentrados os trabalhos de **análise de dados, engenharia de features,
+treinamento do modelo** e a **API** que serve as previsões para o sistema.
 
-Aqui estão concentrados os trabalhos de **análise de dados, engenharia de features,
-treinamento do modelo e a API Python (FastAPI)** responsável por expor as previsões
-consumidas pela aplicação.
+**🚀 [Acesse a Documentação da API (Swagger UI)](https://churn-hackathon.onrender.com/docs)**
 
-📘 A documentação completa do projeto, incluindo visão geral, arquitetura e integração
-entre os squads, está disponível no repositório principal:
+**⚠️Atenção Backend:** Para testes e integração, utilize sempre o final `/docs` na URL de produção para visualizar os schemas atualizados.
 
 **👉 [Backend — ChurnInsight](https://github.com/renancvitor/churninsight-backend-h12-25b)**
 
-**🚀 [API em produção (Render)](https://churn-hackathon.onrender.com)\docs**
 
 ---
 
@@ -183,18 +180,29 @@ A comunicação entre DS e Backend ocorrerá via API Python, que deve receber um
 - previsão textual (“Vai cancelar” ou “Vai continuar”)
 - probabilidade numérica associada ao churn
 
-Exemplo previsto de payload (sujeito a alterações):
+## ⚠️ Regras de Validação (Limites da API)
+Para garantir a estabilidade, a API possui validações rigorosas. Dados fora destas faixas retornarão ```Erro 422```:
+
+**Campo	Regra** / **Limite**
+**CreditScore**	Inteiro entre 0 e 1000
+**Age**	Entre 18 e 92 anos
+**Tenure**	Entre 0 e 10 anos
+**Balance**	Máximo de 500.000,00
+**EstimatedSalary**	Entre 523.00 e 500.000,00
+
+📥 Exemplo de Chamada Payload (sujeito a alterações)
 
 📥 Entrada
 ```json
 {
-  "CreditScore": 650,
+  "Surname": "Campbell",
+  "CreditScore": 350,
   "Geography": "France",
   "Gender": "Male",
-  "Age": 40,
-  "Tenure": 5,
-  "Balance": 60000,
-  "EstimatedSalary": 80000
+  "Age": 39,
+  "Tenure": 0,
+  "Balance": 109733.2,
+  "EstimatedSalary": 123602.11
 }
 
 ```
@@ -203,11 +211,14 @@ Exemplo previsto de payload (sujeito a alterações):
 
 ```json
 {
-"previsao": "Vai continuar",
-"probabilidade": 0.24,
-"nivel_risco": "BAIXO",
-"recomendacao": "Cliente estável - manutenção padrão"
+  "surname": "Campbell",
+  "classificacao_score": "Regular",
+  "previsao": "Vai cancelar",
+  "probabilidade": 0.395,
+  "nivel_risco": "ALTO",
+  "recomendacao": "Ação imediata recomendada: contato ativo e oferta personalizada"
 }
+
 ```
 
 ⚠️ O contrato final será validado em conjunto com o squad Back-end.
