@@ -135,6 +135,7 @@ Para assegurar que o modelo apresente em produção **o mesmo comportamento obse
 Essa estratégia garante **robustez, rastreabilidade e integridade estatística**, alinhando a implementação da API às melhores práticas de MLOps e facilitando a integração com o time de backend.
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
+
 ---
 
 <h2 id="tecnologias" align="center">Tecnologias e Ferramentas</h2>
@@ -188,8 +189,8 @@ notebooks/
 .gitignore
 README.md
 requirements.txt
-
 ```
+
 Links adicionais podem ser adicionados conforme a documentação evoluir.
 
 *A estrutura final do repositório reflete a implantação da API*
@@ -382,8 +383,8 @@ Estes são passos gerais necessários para rodar a API de previsões; poderão s
 A aplicação também está disponível em ambiente de produção, hospedada na plataforma **Render**:
 
 https://churn-hackathon.onrender.com/docs
-
 ```
+
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
 ---
