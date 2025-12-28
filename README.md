@@ -1,18 +1,32 @@
-<h1 id="inicio" align="center">ChurnInsight — Data Science <br>
-<img src="https://img.shields.io/badge/Status-Em%20desenvolvimento-yellow" width="180" height="30" />
-</h1>
+<h1 align="center">ChurnInsight — Data Science</h1>
+<p align="center"> <img src="https://img.shields.io/badge/Status-Em%20desenvolvimento-yellow" width="180" height="30" /> </p>
 
 <h2 id="inicio" align="center">🔗 ChurnInsight — Data Science</h2>
 
-Este repositório contém o desenvolvimento do modelo preditivo utilizado pela
-plataforma **ChurnInsight**, criada durante o **Hackathon da Alura**. Aqui estão concentrados os trabalhos de **análise de dados, engenharia de features,
-treinamento do modelo** e a **API** que serve as previsões para o sistema.
+Este repositório concentra toda a camada de **Data Science** da plataforma **ChurnInsight**, desenvolvida durante o **Hackathon da Alura**.
 
-**🚀 [Acesse a Documentação da API (Swagger UI)](https://churn-hackathon.onrender.com/docs)**
+Aqui estão documentados e versionados:
 
-**⚠️Atenção Backend:** Para testes e integração, utilize sempre o final `/docs` na URL de produção para visualizar os schemas atualizados.
+- Análise exploratória de dados (EDA)
 
-**👉 [Backend — ChurnInsight](https://github.com/renancvitor/churninsight-backend-h12-25b)**
+- Engenharia de features
+
+- Treinamento e validação do modelo
+
+- Pipeline de Machine Learning serializado
+
+- API Python (FastAPI) para inferência em produção
+
+A API expõe previsões de **probabilidade de churn**, permitindo que o Backend consuma o modelo de forma segura, padronizada e escalável.
+
+**🚀API em Produção (Swagger UI)**
+https://churn-hackathon.onrender.com/docs
+
+**⚠️ Importante para o Backend:
+Sempre utilize o endpoint ``/docs`` para visualizar o contrato atualizado da API.
+
+**👉 Repositório do Backend:**
+https://github.com/renancvitor/churninsight-backend-h12-25b
 
 
 ---
@@ -24,6 +38,7 @@ treinamento do modelo** e a **API** que serve as previsões para o sistema.
 - [Abordagem Geral de Data Science](#abordagem)
 - [Tecnologias e Ferramentas](#tecnologias)
 - [Estrutura do Repositório](#estrutura)
+- [Fonte dos Dados](#fonte)
 - [Integração com o Backend](#integracao)
 - [Primeiros Entregáveis do Squad](#entregaveis)
 - [Pontos em Aberto / Decisões do Time](#decisoes)
@@ -34,7 +49,7 @@ treinamento do modelo** e a **API** que serve as previsões para o sistema.
 
 <h2 id="visao-geral" align="center">Visão Geral do Projeto</h2>
 
-O **ChurnInsight** é uma solução desenvolvida para prever a probabilidade de cancelamento de clientes (churn) em serviços de assinatura.  
+O **ChurnInsight** consiste em criar uma solução que preveja se um cliente está propenso a cancelar um serviço (churn).  
 Este repositório abriga **toda a parte de Data Science**, incluindo análise exploratória, preparação de dados, treinamento do modelo e exposição de previsões via API Python.
 
 A proposta para o hackathon é entregar um **MVP funcional**, permitindo que o backend consulte a probabilidade de churn a partir de um JSON enviado pelo cliente.
@@ -65,20 +80,61 @@ O objetivo inicial é estabelecer uma base clara e organizada para o desenvolvim
 
 A abordagem adotada pelo time de Data Science para o MVP foi a seguinte:
 
-- **Pré-Processamento:** Remoção de colunas de identificação (`RowNumber`, `CustomerId`, `Surname`) e codificação de variáveis categóricas (`Geography` e `Gender`) utilizando **One-Hot Encoding**.
+### 🔹 Pré-Processamento & Escalonamento
+Além da remoção de colunas de identificação (`RowNumber`, `CustomerId`, `Surname`) e da aplicação de **One-Hot Encoding** para variáveis categóricas, os dados numéricos foram **normalizados utilizando `StandardScaler`**.
 
-- **Engenharia de Features**: Criação das variáveis compostas `Age_Tenure`, `Balance_Salary_Ratio` e a flag `High_Value_Customer`, calculada exclusivamente a partir das medianas do conjunto de treino.
+O ajuste do escalonador foi realizado **exclusivamente sobre o conjunto de treino**, garantindo a integridade estatística do modelo e evitando **data leakage**.
 
-- **Modelagem:** Utilização do algoritmo **Random Forest Classifier** (`n_estimators=200`, `class_weight={0:1, 1:3}`), priorizando robustez, estabilidade e interpretabilidade.
+---
 
-- **Desbalanceamento:** Ajuste de `class_weight={0: 1, 1: 3}` e definição de **threshold = 0.35**, priorizando Recall da classe churn.
+### 🔹 Engenharia de Features
+Foram criadas variáveis sintéticas com o objetivo de capturar padrões não triviais de comportamento do cliente:
 
-- **Pipeline Completo:** Treinamento, validação e teste encapsulados em um único pipeline, evitando data leakage.
+- **`Age_Tenure`**  
+  Interação entre idade e tempo de relacionamento com a empresa.
 
-- **Serialização:** Pipeline final exportado com `joblib` em `models/model.joblib`.
+- **`Balance_Salary_Ratio`**  
+  Proporção entre o saldo bancário e o salário estimado, indicando exposição financeira relativa.
+
+- **`High_Value_Customer`**  
+  Identificador binário de clientes de alto valor, calculado a partir das **medianas do conjunto de treino**, adotando uma abordagem robusta para evitar vazamento de informação.
+
+---
+
+### 🔹 Modelagem de Alta Performance
+O algoritmo selecionado foi o **Random Forest Classifier**, com `n_estimators = 200`.
+
+A escolha desse modelo se deu por:
+- Capacidade superior de capturar **relações não-lineares**
+- Robustez frente a **outliers**
+- Melhor desempenho empírico em comparação a modelos lineares simples (ex.: Regressão Logística)
+
+---
+
+### 🔹 Estratégia de Churn (Recall-Driven)
+Considerando o **desbalanceamento da base**, foram aplicados pesos de classe:
+
+```python
+class_weight = {0: 1, 1: 3}
+````
+---
+
+### 🔹 Pipeline e Serialização
+
+Para assegurar que o modelo apresente em produção **o mesmo comportamento observado no ambiente de desenvolvimento**, todos os componentes do processo de Machine Learning foram integrados em um **pipeline único, consistente e reprodutível**.
+
+- **Encapsulamento dos artefatos**  
+  O modelo treinado, o escalonador de variáveis (`StandardScaler`) e os parâmetros utilizados na engenharia de features (medianas calculadas exclusivamente na base de treino) foram consolidados em um único objeto. Essa abordagem garante coerência estatística e elimina riscos de divergência entre treino e inferência.
+
+- **Serialização do pipeline**  
+  A biblioteca **`joblib`** foi utilizada para serializar todos os artefatos do pipeline, preservando integralmente as transformações aplicadas aos dados e a lógica do modelo preditivo.
+
+- **Carregamento em produção**  
+  O arquivo serializado encontra-se em `app/models/model.joblib` e é carregado automaticamente durante o processo de inicialização da API. Dessa forma, assegura-se que cada requisição de predição utilize exatamente os mesmos parâmetros, transformações e limiares definidos no treinamento.
+
+Essa estratégia garante **robustez, rastreabilidade e integridade estatística**, alinhando a implementação da API às melhores práticas de MLOps e facilitando a integração com o time de backend.
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
-
 ---
 
 <h2 id="tecnologias" align="center">Tecnologias e Ferramentas</h2>
@@ -117,19 +173,22 @@ A estrutura abaixo é um **ponto de partida** e deve evoluir conforme decisões 
 
 ```plaintext
 app/
+ └── models/
+ └── model.joblib     # Pipeline serializado
  ├── __init__.py
  └── main.py              # API FastAPI 
- └── models/
-     └── model.joblib     # Pipeline serializado
+
 data/
  ├── Churn.csv            # Dados brutos (origem)
- └── dataset.parquet
+ └── dataset.parquet      # Dados tratados (pós-EDA e features)
 
 notebooks/
- └── Churn_Hackathon.ipynb
+ └── Churn_Hackathon.ipynb  # EDA, engenharia de features e treinamento
+
 .gitignore
 README.md
 requirements.txt
+
 ```
 Links adicionais podem ser adicionados conforme a documentação evoluir.
 
@@ -244,8 +303,6 @@ Para garantir a estabilidade, a API possui validações rigorosas. Dados fora de
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
 ---
-
-
 
 <h2 id="entregaveis" align="center">Primeiros Entregáveis do Squad</h2>
 
