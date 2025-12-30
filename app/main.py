@@ -58,8 +58,7 @@ def classificar_faixa_score(score: int) -> str:
     
 def gerar_recomendacao(nivel_risco: str) -> str:
     recomendas = {
-        "CRÍTICO": "Contato imediato + oferta personalizada urgente",
-        "ALTO": "Incluir em campanha de retenção prioritária",
+        "ALTO": "Ação imediata recomendada: contato ativo e oferta personalizada",
         "MÉDIO": "Monitoramento recomendado e campanhas de retenção",
         "BAIXO": "Cliente estável - manutenção padrão"
     }
@@ -157,10 +156,12 @@ def predict_churn(data: CustomerInput):
     threshold = artifacts["threshold"]
 
     # 4. Definição de Risco (Conforme Notebook)
-    if proba >= 0.7: risco = "CRÍTICO"
-    elif proba >= 0.5: risco = "ALTO"
-    elif proba >= 0.3: risco = "MÉDIO"
-    else: risco = "BAIXO"
+    if proba >= 0.5:
+        risco = "ALTO"
+    elif proba >= 0.3:
+        risco = "MÉDIO"
+    else:
+        risco = "BAIXO"
 
     previsao = "Vai cancelar" if proba >= threshold else "Vai continuar"
 
