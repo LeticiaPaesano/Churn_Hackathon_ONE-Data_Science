@@ -10,15 +10,10 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 # =========================================================
-# LOGGING — REDUÇÃO DE RUÍDO EM PRODUÇÃO
+# LOGGING
 # =========================================================
-
 logging.getLogger("uvicorn.error").setLevel(logging.ERROR)
 logging.getLogger("uvicorn.access").setLevel(logging.ERROR)
-
-# =========================================================
-# CONFIGURAÇÃO DE CAMINHOS
-# =========================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "model.joblib")
@@ -26,42 +21,30 @@ MODEL_PATH = os.path.join(BASE_DIR, "models", "model.joblib")
 artifacts: dict = {}
 
 # =========================================================
-# LIFESPAN — CARREGAMENTO DO MODELO
+# LIFESPAN
 # =========================================================
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if not os.path.exists(MODEL_PATH):
-        raise RuntimeError(
-            f"Modelo não encontrado em {MODEL_PATH}"
-        )
+        raise RuntimeError(f"Modelo não encontrado em {MODEL_PATH}")
+        
+    loaded = joblib.load(MODEL_PATH)
+    
+    artifacts["model"] = loaded["model"]
+    artifacts["scaler"] = loaded["scaler"]
+    artifacts["columns"] = loaded["columns"]
+    artifacts["threshold"] = loaded.get("threshold", 0.35)
+    artifacts["balance_median"] = loaded.get("balance_median", 0.0)
+    artifacts["salary_median"] = loaded.get("salary_median", 0.0)
+    print("✅ Modelo carregado com sucesso")
+    yield
 
-       loaded = joblib.load(MODEL_PATH)
-
-
-        artifacts["model"] = loaded["model"]
-        artifacts["scaler"] = loaded["scaler"]
-        artifacts["columns"] = loaded["columns"]
-        artifacts["threshold"] = loaded.get("threshold", 0.35)
-        artifacts["balance_median"] = loaded.get("balance_median", 0.0)
-        artifacts["salary_median"] = loaded.get("salary_median", 0.0)
-
-        print(f"✅ Modelo carregado com sucesso")
-        yield
+app = FastAPI(title="ChurnInsight API", version="1.2.1", lifespan=lifespan)
 
 # =========================================================
-# APLICAÇÃO FASTAPI
+# UTILS
 # =========================================================
 
-app = FastAPI(
-    title="ChurnInsight API",
-    version="1.2.1",
-    lifespan=lifespan,
-)
-
-# =========================================================
-# FUNÇÕES DE APOIO
-# =========================================================
 def gerar_recomendacao(nivel_risco: str) -> str:
     if nivel_risco == "ALTO":
         return "Ação imediata recomendada: contato ativo e oferta personalizada"
@@ -73,28 +56,50 @@ def calcular_explicabilidade_local(
     model,
     X: np.ndarray,
     feature_names: List[str],
-    baseline_proba: float
+    baseline_proba: float, # ADICIONADA VÍRGULA AQUI (CORREÇÃO DE ERRO)
+    input_data: dict 
 ) -> List[str]:
-    impactos = []
 
+    # Mapeamento para retornar valores específicos (Germany, Male, etc)
+    mapeamento_contrato = {
+        "CreditScore": "CreditScore",
+        "Age": "Age",
+        "Tenure": "Tenure",
+        "Balance": "Balance",
+        "EstimatedSalary": "EstimatedSalary",
+        "Geography_Germany": input_data.get("Geography"), # Retorna o valor (ex: Germany)
+        "Geography_Spain": input_data.get("Geography"),
+        "Gender_Male": input_data.get("Gender"),         # Retorna o valor (ex: Male)
+        "Balance_Salary_Ratio": "Balance",      
+        "Age_Tenure": "Age",                    
+        "High_Value_Customer": "Balance"        
+    }
+
+    # INDENTAÇÃO CORRIGIDA ABAIXO
+    impactos = []
     for i, feature in enumerate(feature_names):
         X_mod = X.copy()
-        X_mod[0, i] = 0
-
+        X_mod[0, i] = 0 
         proba_mod = model.predict_proba(X_mod)[0, 1]
-        impacto = baseline_proba - proba_mod
+        impactos.append((feature, baseline_proba - proba_mod))
 
-        impactos.append((feature, impacto))
+    impactos_ordenados = sorted(impactos, key=lambda x: x[1], reverse=True)
+   
+    features_contrato_relevantes = []
+    for feat_interna, score in impactos_ordenados:
+        nome_amigavel = mapeamento_contrato.get(feat_interna)
+        if nome_amigavel and nome_amigavel not in features_contrato_relevantes:
+            features_contrato_relevantes.append(nome_amigavel)
+        
+        if len(features_contrato_relevantes) >= 3:
+            break
 
-    impactos_ordenados = sorted(
-        impactos, key=lambda x: x[1], reverse=True
-    )
-
-    return [f[0] for f in impactos_ordenados[:3]]
+    return features_contrato_relevantes
 
 # =========================================================
-# CONTRATOS DA API — ALINHADOS AO BACKEND
+# SCHEMAS
 # =========================================================
+
 class CustomerInput(BaseModel):
     CreditScore: int = Field(..., ge=0, le=1000)
     Geography: Literal["France", "Germany", "Spain"]
@@ -110,51 +115,49 @@ class PredictionOutput(BaseModel):
     nivel_risco: str
     recomendacao: str
     explicabilidade: Optional[List[str]] = None
-    
+
 # =========================================================
-# ENDPOINT PRINCIPAL
+# ENDPOINT
 # =========================================================
 
 @app.post("/previsao", response_model=PredictionOutput)
 def predict_churn(data: CustomerInput):
     
     if "model" not in artifacts:
-        raise HTTPException(status_code=503, detail="Modelo não carregado.")
+        raise HTTPException(status_code=503, detail="Modelo não carregado")
 
-    # DataFrame para processamento
+    input_dict = data.model_dump()
     df = pd.DataFrame([input_dict])
 
-    # Feature Engineering (idêntico ao treino)
+    # Feature engineering
     df["Balance_Salary_Ratio"] = df["Balance"] / (df["EstimatedSalary"] + 1)
     df["Age_Tenure"] = df["Age"] * df["Tenure"]
     df["High_Value_Customer"] = (
-            (df["Balance"] > artifacts["balance_median"])
-            & (df["EstimatedSalary"] > artifacts["salary_median"])
-        ).astype(int)
+        (df["Balance"] > artifacts["balance_median"]) &
+        (df["EstimatedSalary"] > artifacts["salary_median"])
+    ).astype(int)
 
-    # One-Hot Encoding manual (contrato fixo)
+    # One-hot encoding
     for col in ["Geography_Germany", "Geography_Spain", "Gender_Male"]:
         df[col] = 0
 
-        if data.Geography == "Germany":
-            df["Geography_Germany"] = 1
-        elif data.Geography == "Spain":
-            df["Geography_Spain"] = 1
+    if data.Geography == "Germany":
+        df["Geography_Germany"] = 1
+    elif data.Geography == "Spain":
+        df["Geography_Spain"] = 1
 
-        if data.Gender == "Male":
-            df["Gender_Male"] = 1
+    if data.Gender == "Male":
+        df["Gender_Male"] = 1
 
-    # REORDENAÇÃO E ESCALONAMENTO
     df_final = df[artifacts["columns"]]
     X = artifacts["scaler"].transform(df_final)
 
-    # Predição e Risco
     proba = float(artifacts["model"].predict_proba(X)[0, 1])
     threshold = artifacts["threshold"]
-  
+
     previsao = "Vai cancelar" if proba >= threshold else "Vai continuar"
 
-       if proba >= threshold:
+    if proba >= threshold:
         nivel_risco = "ALTO"
     elif proba >= threshold * 0.7:
         nivel_risco = "MÉDIO"
@@ -163,12 +166,14 @@ def predict_churn(data: CustomerInput):
 
     explicabilidade_output = None
 
+    # REQUISITO: Apenas clientes que vão cancelar recebem a explicabilidade
     if previsao == "Vai cancelar":
         explicabilidade_output = calcular_explicabilidade_local(
             model=artifacts["model"],
             X=X,
             feature_names=artifacts["columns"],
-            baseline_proba=proba
+            baseline_proba=proba,
+            input_data=input_dict
         )
 
     return PredictionOutput(
@@ -178,6 +183,7 @@ def predict_churn(data: CustomerInput):
         recomendacao=gerar_recomendacao(nivel_risco),
         explicabilidade=explicabilidade_output
     )
+
 # =========================================================
 # HEALTH
 # =========================================================
