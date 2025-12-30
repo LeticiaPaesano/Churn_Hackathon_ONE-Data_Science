@@ -1,10 +1,11 @@
 import os
 import logging
 from contextlib import asynccontextmanager
-from typing import Literal
+from typing import Literal, Optional, List
 
 import joblib
 import pandas as pd
+import numpy as np
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -36,6 +37,7 @@ async def lifespan(app: FastAPI):
         )
 
        loaded = joblib.load(MODEL_PATH)
+
 
         artifacts["model"] = loaded["model"]
         artifacts["scaler"] = loaded["scaler"]
