@@ -35,8 +35,7 @@ async def lifespan(app: FastAPI):
             f"Modelo não encontrado em {MODEL_PATH}"
         )
 
-    try:
-        loaded = joblib.load(MODEL_PATH)
+       loaded = joblib.load(MODEL_PATH)
 
         artifacts["model"] = loaded["model"]
         artifacts["scaler"] = loaded["scaler"]
@@ -45,11 +44,8 @@ async def lifespan(app: FastAPI):
         artifacts["balance_median"] = loaded.get("balance_median", 0.0)
         artifacts["salary_median"] = loaded.get("salary_median", 0.0)
 
-        print(f"✅ Modelo carregado com sucesso: {MODEL_PATH}")
+        print(f"✅ Modelo carregado com sucesso")
         yield
-
-    except Exception as exc:
-        raise RuntimeError(f"Falha crítica ao carregar o modelo: {exc}")
 
 # =========================================================
 # APLICAÇÃO FASTAPI
@@ -57,79 +53,86 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="ChurnInsight API",
-    description="API de predição de churn com recomendação orientada a negócio",
-    version="1.0.0",
+    version="1.2.1",
     lifespan=lifespan,
 )
 
 # =========================================================
 # FUNÇÕES DE APOIO
 # =========================================================
-def classificar_faixa_score(score: int) -> str:
-    """Classificação de crédito baseada em faixas de mercado."""
-    if score >= 701: return "Excelente"
-    if score >= 501: return "Bom"
-    if score >= 301: return "Regular"
-    return "Baixo"
-
 def gerar_recomendacao(nivel_risco: str) -> str:
     if nivel_risco == "ALTO":
         return "Ação imediata recomendada: contato ativo e oferta personalizada"
     if nivel_risco == "MÉDIO":
         return "Monitoramento recomendado e campanhas de retenção"
     return "Cliente estável - manutenção padrão"
-    
+
+def calcular_explicabilidade_local(
+    model,
+    X: np.ndarray,
+    feature_names: List[str],
+    baseline_proba: float
+) -> List[str]:
+    impactos = []
+
+    for i, feature in enumerate(feature_names):
+        X_mod = X.copy()
+        X_mod[0, i] = 0
+
+        proba_mod = model.predict_proba(X_mod)[0, 1]
+        impacto = baseline_proba - proba_mod
+
+        impactos.append((feature, impacto))
+
+    impactos_ordenados = sorted(
+        impactos, key=lambda x: x[1], reverse=True
+    )
+
+    return [f[0] for f in impactos_ordenados[:3]]
+
 # =========================================================
 # CONTRATOS DA API — ALINHADOS AO BACKEND
 # =========================================================
 class CustomerInput(BaseModel):
-    Surname: str = Field(..., description="Sobrenome do cliente") 
-    CreditScore: int = Field(..., ge=0, le=1000, description="Score de crédito: 0 a 1000")
+    CreditScore: int = Field(..., ge=0, le=1000)
     Geography: Literal["France", "Germany", "Spain"]
     Gender: Literal["Male", "Female"]
     Age: int = Field(..., ge=18, le=92)
     Tenure: int = Field(..., ge=0, le=10)
-    Balance: float = Field(..., ge=0, le=500000.0)
-    EstimatedSalary: float = Field(..., ge=0, le=500000.0)
+    Balance: float = Field(..., ge=0)
+    EstimatedSalary: float = Field(..., ge=0)
 
 class PredictionOutput(BaseModel):
-    surname: str 
-    classificacao_score: str
     previsao: str
     probabilidade: float
     nivel_risco: str
     recomendacao: str
-
+    explicabilidade: Optional[List[str]] = None
+    
 # =========================================================
 # ENDPOINT PRINCIPAL
 # =========================================================
 
 @app.post("/previsao", response_model=PredictionOutput)
-def predict_churn(data: CustomerInput) -> PredictionOutput:
+def predict_churn(data: CustomerInput):
+    
     if "model" not in artifacts:
         raise HTTPException(status_code=503, detail="Modelo não carregado.")
 
-    try:
-    # 1. Entrada → Dicionário e Extração de metadados
-        input_dict = data.model_dump()
-        cliente_surname = input_dict.pop("Surname") # Removemos para não entrar no DataFrame do modelo
-        valor_score = input_dict["CreditScore"] # Pegamos o valor para classificar
-        
-        # 2. DataFrame para processamento
-        df = pd.DataFrame([input_dict])
+    # DataFrame para processamento
+    df = pd.DataFrame([input_dict])
 
-        # 3. Feature Engineering (idêntico ao treino)
-        df["Balance_Salary_Ratio"] = df["Balance"] / (df["EstimatedSalary"] + 1)
-        df["Age_Tenure"] = df["Age"] * df["Tenure"]
-
-        df["High_Value_Customer"] = (
+    # Feature Engineering (idêntico ao treino)
+    df["Balance_Salary_Ratio"] = df["Balance"] / (df["EstimatedSalary"] + 1)
+    df["Age_Tenure"] = df["Age"] * df["Tenure"]
+    df["High_Value_Customer"] = (
             (df["Balance"] > artifacts["balance_median"])
             & (df["EstimatedSalary"] > artifacts["salary_median"])
         ).astype(int)
 
-        # 4. One-Hot Encoding manual (contrato fixo)
-        for col in ["Geography_Germany", "Geography_Spain", "Gender_Male"]:
-            df[col] = 0
+    # One-Hot Encoding manual (contrato fixo)
+    for col in ["Geography_Germany", "Geography_Spain", "Gender_Male"]:
+        df[col] = 0
 
         if data.Geography == "Germany":
             df["Geography_Germany"] = 1
@@ -139,64 +142,49 @@ def predict_churn(data: CustomerInput) -> PredictionOutput:
         if data.Gender == "Male":
             df["Gender_Male"] = 1
 
-        # 5. Validação de features
-        missing_cols = set(artifacts["columns"]) - set(df.columns)
-        if missing_cols:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Features ausentes no input: {missing_cols}",
-            )
-            
-        # 6. REORDENAÇÃO E ESCALONAMENTO
-        df_final = df[artifacts["columns"]]
-        X_input = artifacts["scaler"].transform(df_final)
+    # REORDENAÇÃO E ESCALONAMENTO
+    df_final = df[artifacts["columns"]]
+    X = artifacts["scaler"].transform(df_final)
 
-        # 7. Predição e Risco
-        proba = float(artifacts["model"].predict_proba(X_input)[0, 1])
-        threshold = artifacts["threshold"]
-        
-        # Nível de Risco 
-        if proba >= threshold:
-            nivel_risco = "ALTO"
-        elif proba >= threshold * 0.7:
-            nivel_risco = "MÉDIO"
-        else:
-            nivel_risco = "BAIXO"
+    # Predição e Risco
+    proba = float(artifacts["model"].predict_proba(X)[0, 1])
+    threshold = artifacts["threshold"]
+  
+    previsao = "Vai cancelar" if proba >= threshold else "Vai continuar"
 
-        previsao = "Vai cancelar" if proba >= threshold else "Vai continuar"
+       if proba >= threshold:
+        nivel_risco = "ALTO"
+    elif proba >= threshold * 0.7:
+        nivel_risco = "MÉDIO"
+    else:
+        nivel_risco = "BAIXO"
 
-        # 8. RESPOSTA FINAL
-        return PredictionOutput(
-            surname=cliente_surname,
-            classificacao_score=classificar_faixa_score(valor_score),
-            previsao=previsao,
-            probabilidade=round(proba, 4),
-            nivel_risco=nivel_risco,
-            recomendacao=gerar_recomendacao(nivel_risco),
+    explicabilidade_output = None
+
+    if previsao == "Vai cancelar":
+        explicabilidade_output = calcular_explicabilidade_local(
+            model=artifacts["model"],
+            X=X,
+            feature_names=artifacts["columns"],
+            baseline_proba=proba
         )
 
-    except HTTPException:
-        raise
-    except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erro interno na predição: {exc}",
-        )
-
+    return PredictionOutput(
+        previsao=previsao,
+        probabilidade=round(proba, 4),
+        nivel_risco=nivel_risco,
+        recomendacao=gerar_recomendacao(nivel_risco),
+        explicabilidade=explicabilidade_output
+    )
 # =========================================================
-# ENDPOINT DE DEBUG 
+# HEALTH
 # =========================================================
 
-@app.get("/debug/model")
-def debug_model():
+@app.get("/health")
+def health_check():
     return {
-        "status_carregamento": "OK" if "model" in artifacts else "ERRO",
-        "model_type": str(type(artifacts.get("model"))),
-        "scaler_presente": "scaler" in artifacts,
-        "colunas_esperadas": artifacts.get("columns", []),
-        "threshold_atual": artifacts.get("threshold"),
-        "medianas": {
-            "balance": artifacts.get("balance_median"),
-            "salary": artifacts.get("salary_median"),
-        },
+        "status": "UP",
+        "model_loaded": "model" in artifacts,
+        "scaler_loaded": "scaler" in artifacts,
+        "columns_loaded": bool(artifacts.get("columns")),
     }
