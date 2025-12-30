@@ -15,6 +15,9 @@ from pydantic import BaseModel, Field
 logging.getLogger("uvicorn.error").setLevel(logging.ERROR)
 logging.getLogger("uvicorn.access").setLevel(logging.ERROR)
 
+# =========================================================
+# PATHS
+# =========================================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "model.joblib")
 
@@ -29,12 +32,20 @@ async def lifespan(app: FastAPI):
         raise RuntimeError(f"Modelo não encontrado em {MODEL_PATH}")
         
     loaded = joblib.load(MODEL_PATH)
-    # Usando update para carregar todas as chaves (model, scaler, columns, medianas)
+
     artifacts.update(loaded)
     print("✅ Pipeline carregado com sucesso")
     yield
 
-app = FastAPI(title="ChurnInsight API", version="1.2.1", lifespan=lifespan)
+# =========================================================
+# FASTAPI
+# =========================================================
+
+app = FastAPI(
+    title="ChurnInsight API", 
+    version="1.2.1", 
+    lifespan=lifespan
+)
 
 # =========================================================
 # UTILS
@@ -125,12 +136,12 @@ def predict_churn(data: CustomerInput):
     input_dict = data.model_dump()
     df = pd.DataFrame([input_dict])
 
-    # 1. One-hot encoding manual (Sync com Notebook)
+    # 1. One-hot encoding (Sync com Notebook)
     df["Geography_Germany"] = 1 if data.Geography == "Germany" else 0
     df["Geography_Spain"] = 1 if data.Geography == "Spain" else 0
     df["Gender_Male"] = 1 if data.Gender == "Male" else 0
 
-    # 2. Feature Engineering (Correção dos parênteses no .get)
+    # 2. Feature Engineering
     df["Balance_Salary_Ratio"] = df["Balance"] / (df["EstimatedSalary"] + 1)
     df["Age_Tenure"] = df["Age"] * df["Tenure"]
     df["High_Value_Customer"] = (
@@ -168,6 +179,9 @@ def predict_churn(data: CustomerInput):
         explicabilidade=explicabilidade_output
     )
 
+# =========================================================
+# HEALTH
+# =========================================================
 @app.get("/health")
 def health_check():
     return {
