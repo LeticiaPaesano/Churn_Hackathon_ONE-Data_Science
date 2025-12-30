@@ -56,7 +56,7 @@ def calcular_explicabilidade_local(
     model,
     X: np.ndarray,
     feature_names: List[str],
-    baseline_proba: float, # ADICIONADA VÍRGULA AQUI (CORREÇÃO DE ERRO)
+    baseline_proba: float, 
     input_data: dict 
 ) -> List[str]:
 
@@ -75,7 +75,7 @@ def calcular_explicabilidade_local(
         "High_Value_Customer": "Balance"        
     }
 
-    # INDENTAÇÃO CORRIGIDA ABAIXO
+  
     impactos = []
     for i, feature in enumerate(feature_names):
         X_mod = X.copy()
