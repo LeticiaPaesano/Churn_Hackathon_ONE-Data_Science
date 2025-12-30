@@ -39,14 +39,23 @@ async def lifespan(app: FastAPI):
     print("✅ Modelo carregado com sucesso")
     yield
 
-app = FastAPI(title="ChurnInsight API", version="1.2.1", lifespan=lifespan)
+app = FastAPI(
+    title="ChurnInsight API", 
+    version="1.2.1", 
+    lifespan=lifespan
+)
 
 # =========================================================
 # UTILS
 # =========================================================
-
+def classificar_faixa_score(score: int) -> str:
+    if score >= 701: return "Excelente"
+    if score >= 501: return "Bom"
+    if score >= 301: return "Regular"
+    return "Baixo"
+    
 def gerar_recomendacao(nivel_risco: str) -> str:
-    if nivel_risco == "ALTO":
+    if nivel_risco == "ALTO" or nivel_risco == "CRÍTICO":
         return "Ação imediata recomendada: contato ativo e oferta personalizada"
     if nivel_risco == "MÉDIO":
         return "Monitoramento recomendado e campanhas de retenção"
@@ -60,16 +69,16 @@ def calcular_explicabilidade_local(
     input_data: dict 
 ) -> List[str]:
 
-    # Mapeamento para retornar valores específicos (Germany, Male, etc)
+    # Mapeamento para retornar valores de ENUMs
     mapeamento_contrato = {
         "CreditScore": "CreditScore",
         "Age": "Age",
         "Tenure": "Tenure",
         "Balance": "Balance",
         "EstimatedSalary": "EstimatedSalary",
-        "Geography_Germany": input_data.get("Geography"), # Retorna o valor (ex: Germany)
+        "Geography_Germany": input_data.get("Geography"), 
         "Geography_Spain": input_data.get("Geography"),
-        "Gender_Male": input_data.get("Gender"),         # Retorna o valor (ex: Male)
+        "Gender_Male": input_data.get("Gender"),       
         "Balance_Salary_Ratio": "Balance",      
         "Age_Tenure": "Age",                    
         "High_Value_Customer": "Balance"        
@@ -133,8 +142,8 @@ def predict_churn(data: CustomerInput):
     df["Balance_Salary_Ratio"] = df["Balance"] / (df["EstimatedSalary"] + 1)
     df["Age_Tenure"] = df["Age"] * df["Tenure"]
     df["High_Value_Customer"] = (
-        (df["Balance"] > artifacts["balance_median"]) &
-        (df["EstimatedSalary"] > artifacts["salary_median"])
+        (df["Balance"] > artifacts.get("balance_median", 0)) &
+        (df["EstimatedSalary"] > artifacts.get("salary_median", 0))
     ).astype(int)
 
     # One-hot encoding
@@ -148,32 +157,35 @@ def predict_churn(data: CustomerInput):
 
     if data.Gender == "Male":
         df["Gender_Male"] = 1
-
+        
+    # Escalonamento e Predição
     df_final = df[artifacts["columns"]]
-    X = artifacts["scaler"].transform(df_final)
+    X_scaled = artifacts["scaler"].transform(df_final)
 
-    proba = float(artifacts["model"].predict_proba(X)[0, 1])
+    proba = float(artifacts["model"].predict_proba(X_scaled)[0, 1])
     threshold = artifacts["threshold"]
+
+    # Lógica de Risco
+    if proba >= 0.7: 
+        risco = "ALTO" # Nível Crítico/Alto
+    elif proba >= 0.5: 
+        risco = "ALTO"
+    elif proba >= 0.3: 
+        risco = "MÉDIO"
+    else: 
+        risco = "BAIXO"
 
     previsao = "Vai cancelar" if proba >= threshold else "Vai continuar"
 
-    if proba >= threshold:
-        nivel_risco = "ALTO"
-    elif proba >= threshold * 0.7:
-        nivel_risco = "MÉDIO"
-    else:
-        nivel_risco = "BAIXO"
-
+    # Explicabilidade
     explicabilidade_output = None
-
-    # REQUISITO: Apenas clientes que vão cancelar recebem a explicabilidade
     if previsao == "Vai cancelar":
         explicabilidade_output = calcular_explicabilidade_local(
-            model=artifacts["model"],
-            X=X,
-            feature_names=artifacts["columns"],
-            baseline_proba=proba,
-            input_data=input_dict
+            artifacts["model"], 
+            X_scaled, 
+            artifacts["columns"], 
+            proba, 
+            input_dict
         )
 
     return PredictionOutput(
