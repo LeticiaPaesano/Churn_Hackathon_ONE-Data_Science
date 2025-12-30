@@ -6,3 +6,5 @@ numpy
 scikit-learn
 pydantic>=2.0,<3.0
 pyarrow
+pytest
+httpx
