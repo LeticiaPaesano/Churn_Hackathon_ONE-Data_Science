@@ -213,9 +213,11 @@ O modelo final foi avaliado em uma base de teste (dados nunca vistos pelo modelo
 ### 📊 Desempenho Visual
 A Matriz de Confusão abaixo demonstra o equilíbrio alcançado. Com o threshold em 0.35, conseguimos capturar uma parcela significativa de clientes em risco (True Positives), priorizando a sensibilidade do modelo.
 
-<img width="658" height="547" alt="image" src="https://github.com/user-attachments/assets/5a62d82f-e7cd-4c87-8ba4-c3e87e6e4eb9" />
+<img width="671" height="547" alt="image" src="https://github.com/user-attachments/assets/2356bb27-ad85-4c37-ba65-9f042ee3f762" />
 
 > **🎯 Nota Estratégica:** O foco do squad foi a **Maximização do Recall**. No contexto de Churn, o custo de perder um cliente (Falso Negativo) é muito superior ao custo de uma ação de retenção para um cliente que talvez não saísse (Falso Positivo).
+
+<img width="658" height="547" alt="image" src="https://github.com/user-attachments/assets/92a8f1bd-8963-461c-986e-4213864e3ce3" />
 
 ---
 
@@ -223,12 +225,15 @@ A Matriz de Confusão abaixo demonstra o equilíbrio alcançado. Com o threshold
 Além das métricas, o projeto buscou entender **o que causa o Churn**.
 O gráfico revela que a **Idade (Age)** é, de longe, o fator mais decisivo, seguida pelo **Salário Estimado** e **Score de Crédito**. Isso indica que o comportamento de cancelamento está fortemente ligado ao momento de vida e saúde financeira do cliente.
 
-<img width="1189" height="790" alt="image" src="https://github.com/user-attachments/assets/804bd97b-f6d2-4165-ae32-e9275951878d" />
+<img width="1189" height="790" alt="image" src="https://github.com/user-attachments/assets/bf4b92ea-2dcb-469c-8e84-397c4d9fe842" />
 
-#### Correlação entre Atributos
+### Correlação entre Atributos
+
+<img width="1485" height="990" alt="image" src="https://github.com/user-attachments/assets/2381d739-a2b5-4ab1-83f3-79ee8811855d" />
+
 O mapa de correlação validou nossas hipóteses iniciais, mostrando uma relação positiva relevante entre a **Idade** e o **Saldo Bancário** com o status de saída (Exited).
 
-<img width="865" height="782" alt="image" src="https://github.com/user-attachments/assets/0a03032c-8323-449f-b42a-d01592f6bd88" />
+<img width="865" height="782" alt="image" src="https://github.com/user-attachments/assets/2a41fd1a-a997-4082-9eba-bc6f69f3e114" />
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
@@ -275,9 +280,11 @@ Rascunho dos principais entregáveis iniciais:
 Acesse:
 
 API: 
+
 ```http://localhost:8000```
 
 Swagger UI: 
+
 ```http://localhost:8000/docs```
 
 2️⃣ Via Python Local (Desenvolvimento)
@@ -300,12 +307,15 @@ A API é empacotada via Docker e publicada automaticamente no Render Cloud.
 **Endpoints Importantes**
 
 Health Check: 
+
 ```GET /health```
 
 Documentação (Swagger): 
+
 ```/docs```
 
 **Produção**
+
 ```https://churn-hackathon.onrender.com/docs```
 
 ⚠️ A documentação em /docs é a fonte oficial e viva do contrato da API.
