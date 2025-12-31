@@ -199,17 +199,36 @@ A API valida os dados antes de processar. Entradas fora do limite retornam ``HTT
 
 <h2 id="metricas" align="center">Métricas e Resultados do Modelo (Teste)</h2>
 
-**ROC-AUC:** 0.7669
+O modelo final foi avaliado em uma base de teste (dados nunca vistos pelo modelo) para garantir sua capacidade de generalização. Abaixo, os indicadores de performance utilizando o **Threshold estratégico de 0.35**:
 
-**Acurácia:** 79.00%
+| Métrica              | Valor      |
+| :--------------------| :--------- |
+| **ROC-AUC**          | **0.7669** |
+| **Acurácia**         | **79.00%** |
+| **Recall (Churn)**   | **47.91%** |
+| **Precisão (Churn)** | **48.39%** |
 
-**Recall (Churn):** 47.91%
+</div>
 
-**Precisão (Churn):** 48.39%
+### 📊 Desempenho Visual
+A Matriz de Confusão abaixo demonstra o equilíbrio alcançado. Com o threshold em 0.35, conseguimos capturar uma parcela significativa de clientes em risco (True Positives), priorizando a sensibilidade do modelo.
 
-**Threshold:** 0.35
+<img width="658" height="547" alt="image" src="https://github.com/user-attachments/assets/5a62d82f-e7cd-4c87-8ba4-c3e87e6e4eb9" />
 
-**🎯 Foco: Maximização do Recall para evitar que clientes em risco passem despercebidos.**
+> **🎯 Nota Estratégica:** O foco do squad foi a **Maximização do Recall**. No contexto de Churn, o custo de perder um cliente (Falso Negativo) é muito superior ao custo de uma ação de retenção para um cliente que talvez não saísse (Falso Positivo).
+
+---
+
+### 🔍 Inteligência de Dados e Insights
+Além das métricas, o projeto buscou entender **o que causa o Churn**.
+O gráfico revela que a **Idade (Age)** é, de longe, o fator mais decisivo, seguida pelo **Salário Estimado** e **Score de Crédito**. Isso indica que o comportamento de cancelamento está fortemente ligado ao momento de vida e saúde financeira do cliente.
+
+<img width="1189" height="790" alt="image" src="https://github.com/user-attachments/assets/804bd97b-f6d2-4165-ae32-e9275951878d" />
+
+#### Correlação entre Atributos
+O mapa de correlação validou nossas hipóteses iniciais, mostrando uma relação positiva relevante entre a **Idade** e o **Saldo Bancário** com o status de saída (Exited).
+
+<img width="865" height="782" alt="image" src="https://github.com/user-attachments/assets/0a03032c-8323-449f-b42a-d01592f6bd88" />
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
@@ -255,9 +274,11 @@ Rascunho dos principais entregáveis iniciais:
 
 Acesse:
 
-API: ```http://localhost:8000```
+API: 
+```http://localhost:8000```
 
-Swagger UI: ```http://localhost:8000/docs```
+Swagger UI: 
+```http://localhost:8000/docs```
 
 2️⃣ Via Python Local (Desenvolvimento)
 
@@ -278,9 +299,11 @@ A API é empacotada via Docker e publicada automaticamente no Render Cloud.
 
 **Endpoints Importantes**
 
-Health Check: ```GET /health```
+Health Check: 
+```GET /health```
 
-Documentação (Swagger): ```/docs```
+Documentação (Swagger): 
+```/docs```
 
 **Produção**
 ```https://churn-hackathon.onrender.com/docs```
