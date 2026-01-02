@@ -1,12 +1,13 @@
 import os
 import logging
+import io
 from contextlib import asynccontextmanager
 from typing import Literal, Optional, List
 
 import joblib
 import pandas as pd
 import numpy as np
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel, Field
 
 # =========================================================
@@ -32,30 +33,21 @@ async def lifespan(app: FastAPI):
         raise RuntimeError(f"Modelo não encontrado em {MODEL_PATH}")
         
     loaded = joblib.load(MODEL_PATH)
-
     artifacts.update(loaded)
-    print("✅ Pipeline carregado com sucesso")
     yield
 
 # =========================================================
 # FASTAPI
 # =========================================================
-
 app = FastAPI(
     title="ChurnInsight API", 
-    version="1.2.1", 
+    version="1.3.0", 
     lifespan=lifespan
 )
 
 # =========================================================
 # UTILS
 # =========================================================
-def classificar_faixa_score(score: int) -> str:
-    if score >= 701: return "Excelente"
-    if score >= 501: return "Bom"
-    if score >= 301: return "Regular"
-    return "Baixo"
-    
 def gerar_recomendacao(nivel_risco: str) -> str:
     recomendas = {
         "ALTO": "Ação imediata recomendada: contato ativo e oferta personalizada",
@@ -64,46 +56,79 @@ def gerar_recomendacao(nivel_risco: str) -> str:
     }
     return recomendas.get(nivel_risco, "Manutenção padrão")
 
-def calcular_explicabilidade_local(
-    model,
-    X: np.ndarray,
-    feature_names: List[str],
-    baseline_proba: float, 
-    input_data: dict 
-) -> List[str]:
-    
+def calcular_explicabilidade_local(model, X, feature_names, baseline_proba, input_data):
     mapeamento_contrato = {
-        "CreditScore": "CreditScore",
-        "Age": "Age",
-        "Tenure": "Tenure",
-        "Balance": "Balance",
-        "EstimatedSalary": "EstimatedSalary",
-        "Geography_Germany": input_data.get("Geography"), 
-        "Geography_Spain": input_data.get("Geography"),
-        "Gender_Male": input_data.get("Gender"),         
-        "Balance_Salary_Ratio": "Balance",      
-        "Age_Tenure": "Age",                    
-        "High_Value_Customer": "Balance"        
+        "CreditScore": "CreditScore", "Age": "Age", "Tenure": "Tenure",
+        "Balance": "Balance", "EstimatedSalary": "EstimatedSalary",
+        "Geography_Germany": "Geography", "Geography_Spain": "Geography",
+        "Gender_Male": "Gender", "Balance_Salary_Ratio": "Balance",
+        "Age_Tenure": "Age", "High_Value_Customer": "Balance"
     }
-
     impactos = []
     for i, feature in enumerate(feature_names):
         X_mod = X.copy()
-        X_mod[0, i] = 0 # Perturbação local
+        X_mod[0, i] = 0 
         proba_mod = model.predict_proba(X_mod)[0, 1]
         impactos.append((feature, baseline_proba - proba_mod))
-
+    
     impactos_ordenados = sorted(impactos, key=lambda x: x[1], reverse=True)
-   
     features_finais = []
     for feat_interna, _ in impactos_ordenados:
         nome_amigavel = mapeamento_contrato.get(feat_interna)
         if nome_amigavel and nome_amigavel not in features_finais:
             features_finais.append(nome_amigavel)
-        if len(features_finais) >= 3:
-            break
-
+        if len(features_finais) >= 3: break
     return features_finais
+
+# =========================================================
+# MODEL LOGIC 
+# =========================================================
+def executar_logica_modelo(input_dict: dict) -> dict:
+    if not artifacts:
+        raise ValueError("Modelo não carregado")
+
+    df = pd.DataFrame([input_dict])
+
+    df["Geography_Germany"] = 1 if str(input_dict.get("Geography")) == "Germany" else 0
+    df["Geography_Spain"] = 1 if str(input_dict.get("Geography")) == "Spain" else 0
+    df["Gender_Male"] = 1 if str(input_dict.get("Gender")) == "Male" else 0
+
+    df["Balance_Salary_Ratio"] = df["Balance"] / (df["EstimatedSalary"] + 1)
+    df["Age_Tenure"] = df["Age"] * df["Tenure"]
+    df["High_Value_Customer"] = (
+        (df["Balance"] > artifacts.get("balance_median", 0)) &
+        (df["EstimatedSalary"] > artifacts.get("salary_median", 0))
+    ).astype(int)
+
+    df_final = df[artifacts["columns"]]
+    X_scaled = artifacts["scaler"].transform(df_final)
+
+    proba = float(artifacts["model"].predict_proba(X_scaled)[0, 1])
+    threshold = artifacts.get("threshold", 0.35)
+
+   
+    if proba >= threshold:
+        risco = "ALTO"
+    elif proba >= (threshold * 0.7):
+        risco = "MÉDIO"
+    else:
+        risco = "BAIXO"
+
+    previsao = "Vai cancelar" if proba >= threshold else "Vai continuar"
+
+    explicabilidade = None
+    if previsao == "Vai cancelar":
+        explicabilidade = calcular_explicabilidade_local(
+            artifacts["model"], X_scaled, artifacts["columns"], proba, input_dict
+        )
+
+    return {
+        "previsao": previsao,
+        "probabilidade": round(proba, 4),
+        "nivel_risco": risco,
+        "recomendacao": gerar_recomendacao(risco),
+        "explicabilidade": explicabilidade
+    }
 
 # =========================================================
 # SCHEMAS
@@ -125,68 +150,30 @@ class PredictionOutput(BaseModel):
     explicabilidade: Optional[List[str]] = None
 
 # =========================================================
-# ENDPOINT
+# ENDPOINTS
 # =========================================================
 @app.post("/previsao", response_model=PredictionOutput)
 def predict_churn(data: CustomerInput):
-    if not artifacts:
-        raise HTTPException(status_code=503, detail="Modelo não carregado")
+    try:
+        return executar_logica_modelo(data.model_dump())
+    except Exception as e:
+        raise HTTPException(500, detail=str(e))
 
-    input_dict = data.model_dump()
-    df = pd.DataFrame([input_dict])
-
-    # 1. One-hot encoding (Sync com Notebook)
-    df["Geography_Germany"] = 1 if data.Geography == "Germany" else 0
-    df["Geography_Spain"] = 1 if data.Geography == "Spain" else 0
-    df["Gender_Male"] = 1 if data.Gender == "Male" else 0
-
-    # 2. Feature Engineering
-    df["Balance_Salary_Ratio"] = df["Balance"] / (df["EstimatedSalary"] + 1)
-    df["Age_Tenure"] = df["Age"] * df["Tenure"]
-    df["High_Value_Customer"] = (
-        (df["Balance"] > artifacts.get("balance_median", 0)) &
-        (df["EstimatedSalary"] > artifacts.get("salary_median", 0))
-    ).astype(int)
-
-    # 3. Escalonamento e Predição
-    df_final = df[artifacts["columns"]]
-    X_scaled = artifacts["scaler"].transform(df_final)
-
-    proba = float(artifacts["model"].predict_proba(X_scaled)[0, 1])
-    threshold = artifacts["threshold"]
-
-    # 4. Definição de Risco (Conforme Notebook)
-    if proba >= 0.5:
-        risco = "ALTO"
-    elif proba >= 0.3:
-        risco = "MÉDIO"
-    else:
-        risco = "BAIXO"
-
-    previsao = "Vai cancelar" if proba >= threshold else "Vai continuar"
-
-    # 5. Explicabilidade
-    explicabilidade_output = None
-    if previsao == "Vai cancelar":
-        explicabilidade_output = calcular_explicabilidade_local(
-            artifacts["model"], X_scaled, artifacts["columns"], proba, input_dict
-        )
-
-    return PredictionOutput(
-        previsao=previsao,
-        probabilidade=round(proba, 4),
-        nivel_risco=risco,
-        recomendacao=gerar_recomendacao(risco),
-        explicabilidade=explicabilidade_output
-    )
+@app.post("/previsao-lote")
+async def predict_batch(file: UploadFile = File(...)):
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(400, "Envie um arquivo .CSV válido")
+    try:
+        content = await file.read()
+        df_input = pd.read_csv(io.BytesIO(content)).head(100)
+        resultados = [executar_logica_modelo(row) for row in df_input.to_dict('records')]
+        return {"arquivo": file.filename, "resultados": resultados}
+    except Exception as e:
+        raise HTTPException(500, detail=str(e))
 
 # =========================================================
 # HEALTH
 # =========================================================
 @app.get("/health")
 def health_check():
-    return {
-        "status": "UP",
-        "model_loaded": "model" in artifacts,
-        "scaler_loaded": "scaler" in artifacts
-    }
+    return {"status": "UP", "model_loaded": "model" in artifacts}
