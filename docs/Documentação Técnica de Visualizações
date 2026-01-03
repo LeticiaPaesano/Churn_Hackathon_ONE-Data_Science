@@ -1,0 +1,71 @@
+# 📑 Documentação Técnica de Visualizações (Churn Analysis)
+
+Este documento contém os artefatos visuais gerados durante o desenvolvimento do projeto **Churn — hackathon ONE da Alura**. A ordem das visualizações abaixo segue o fluxo lógico de análise exploratória, validação de hipóteses e avaliação do modelo final.
+
+---
+
+### 1. Análise Exploratória de Dados (EDA)
+
+
+Esta visualização inicial apresenta a distribuição de frequência das variáveis numéricas do dataset.
+
+* **Distribuição do Target:** Confirma o desbalanceamento das classes, com ~80% de retenção e ~20% de churn (Exited).
+* **Comportamento Financeiro:** Revela um volume significativo de clientes com saldo bancário (`Balance`) zerado, o que fundamentou a criação de novas features.
+* **Perfil Demográfico:** A variável `Age` apresenta uma concentração maior entre 30 e 45 anos.
+
+
+
+---
+
+### 2. Mapa de Correlação Linear
+**Arquivo:** `Mapa de Correlação.png`
+
+Executado para identificar relações entre as variáveis antes do processamento.
+
+* **Driver Principal:** A variável `Age` possui a maior correlação positiva (0.29) com o status de saída (`Exited`).
+* **Estabilidade:** A ausência de correlações extremamente altas entre preditores garante que não haja redundância de informação no treinamento.
+
+
+
+---
+
+### 3. Matriz de Confusão - Validação
+**Arquivo:** `Matriz de Confusão - RF Balanceado.png`
+
+Avaliação do modelo `RandomForestClassifier` com pesos de classe (1:3) e threshold ajustado para **0.35** no conjunto de validação.
+
+* **Estratégia de Negócio:** Foco na maximização do **Recall** para identificar o maior número possível de clientes em risco.
+* **Nota:** O modelo aceita um volume controlado de Falsos Positivos para evitar a perda crítica de clientes (Falsos Negativos).
+
+---
+
+### 4. Desempenho Final (Conjunto de Teste)
+**Arquivo:** `Matriz de Confusão - RF Final.png`
+
+Resultado final do modelo após o retreinamento com os dados combinados de treino e validação, aplicado sobre os dados inéditos de teste.
+
+* **Generalização:** O modelo manteve a consistência de predição, com acurácia de ~79% e ROC-AUC de 0.76.
+* **Equilíbrio:** Demonstra a capacidade do algoritmo em manter o desempenho em um ambiente de simulação real.
+
+
+
+---
+
+### 5. Importância das Variáveis (Interpretabilidade)
+**Arquivo:** `Top 10 Features Mais Importantes.png`
+
+Ranking dos atributos que mais influenciaram as decisões do modelo final.
+
+* **Liderança:** A **Idade (`Age`)** é o fator preditivo mais robusto para o churn neste portfólio.
+* **Feature Engineering:** As variáveis derivadas `Age_Tenure` e `Balance_Salary_Ratio` figuram entre as mais importantes, validando a eficácia da engenharia de atributos realizada.
+* **Fatores Financeiros:** `EstimatedSalary` e `CreditScore` aparecem como indicadores secundários de alta relevância.
+
+
+
+---
+
+## 🛠 Como atualizar os artefatos
+Para regenerar estes gráficos após alterações no modelo, execute o notebook principal e utilize o método `plt.savefig()` para exportar os arquivos diretamente para esta pasta:
+
+```python
+plt.savefig('docs/nome_do_arquivo.png', dpi=300, bbox_inches='tight')
