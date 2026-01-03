@@ -115,6 +115,9 @@ data/
 ├── Churn.csv                     # Dados brutos (origem)
 └── dataset.parquet               # Dados tratados (pós-EDA e features)
 
+docs/
+└── Documentação Técnica de Visualizações.md      #Gráficos
+
 notebooks/
 └── Churn_Hackathon.ipynb         # EDA + Modelagem
 
@@ -208,7 +211,8 @@ O modelo final foi avaliado em uma base de teste (dados nunca vistos pelo modelo
 | **Recall (Churn)**   | **47.91%** |
 | **Precisão (Churn)** | **48.39%** |
 
-* 👉[**visualização técnica dos gráficos**](https://github.com/LeticiaPaesano/Churn_Hackathon/blob/main/docs/Documenta%C3%A7%C3%A3o%20T%C3%A9cnica%20de%20Visualiza%C3%A7%C3%B5es.md)
+
+* 👉 [**Visualização Técnica dos Gráficos**](https://github.com/LeticiaPaesano/Churn_Hackathon/blob/main/docs/Documenta%C3%A7%C3%A3o%20T%C3%A9cnica%20de%20Visualiza%C3%A7%C3%B5es.md)
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
