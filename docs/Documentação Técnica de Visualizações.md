@@ -1,6 +1,6 @@
 # 📑 Documentação Técnica de Visualizações (Churn Analysis)
 
-Este documento contém os artefatos visuais gerados durante o desenvolvimento do projeto **Churn — hackathon ONE da Alura**. A ordem das visualizações abaixo segue o fluxo lógico de análise exploratória, validação de hipóteses e avaliação do modelo final.
+Este documento contém os artefatos visuais gerados durante o desenvolvimento do projeto **Churn — hackathon Alura**. A ordem das visualizações abaixo segue o fluxo lógico de análise exploratória, validação de hipóteses e avaliação do modelo final.
 
 ---
 
@@ -12,61 +12,58 @@ Esta visualização inicial apresenta a distribuição de frequência das variá
 
 * **Distribuição do Target:** Confirma o desbalanceamento das classes, com ~80% de retenção e ~20% de churn (Exited).
 * **Comportamento Financeiro:** Revela um volume significativo de clientes com saldo bancário (`Balance`) zerado, o que fundamentou a criação de novas features.
-* **Perfil Demográfico:** A variável `Age` apresenta uma concentração maior entre 30 e 45 anos.
-
-
+* **Perfil Demográfico:** A variável `Age` apresenta uma concentração predominante entre 30 e 45 anos, com o pico de frequência (moda) estabelecido entre 35 e 37 anos, indicando uma base majoritariamente de adultos jovens.
 
 ---
 
-### 2. Mapa de Correlação Linear
-**Arquivo:** `Mapa de Correlação.png`
+### 2. Mapa de Correlação 
 
-Executado para identificar relações entre as variáveis antes do processamento.
+<img width="865" height="782" alt="Mapa de Correlação" src="https://github.com/user-attachments/assets/82dae504-32b7-43a3-9209-d82de91127cd" />
 
-* **Driver Principal:** A variável `Age` possui a maior correlação positiva (0.29) com o status de saída (`Exited`).
-* **Estabilidade:** A ausência de correlações extremamente altas entre preditores garante que não haja redundância de informação no treinamento.
+**Principal Preditor:** A variável ``Age`` possui a maior correlação positiva `**(0.29)** com Exited, sendo o fator de maior influência no churn.
 
+**Fator Financeiro:** O ``Balance`` apresenta correlação de **0.12**, indicando que o volume de saldo também impacta moderadamente na saída do cliente.
 
+**Baixa Colinearidade:** Não há correlações fortes entre as variáveis preditoras, o que evita redundância de dados e garante a estabilidade do modelo.
 
----
-
-### 3. Matriz de Confusão - Validação
-**Arquivo:** `Matriz de Confusão - RF Balanceado.png`
-
-Avaliação do modelo `RandomForestClassifier` com pesos de classe (1:3) e threshold ajustado para **0.35** no conjunto de validação.
-
-* **Estratégia de Negócio:** Foco na maximização do **Recall** para identificar o maior número possível de clientes em risco.
-* **Nota:** O modelo aceita um volume controlado de Falsos Positivos para evitar a perda crítica de clientes (Falsos Negativos).
+**Variáveis Irrelevantes:** ``Tenure`` e ``EstimatedSalary`` possuem correlações próximas a zero, sugerindo baixo poder preditivo isolado.
 
 ---
 
-### 4. Desempenho Final (Conjunto de Teste)
-**Arquivo:** `Matriz de Confusão - RF Final.png`
+### 3. Matriz de Confusão - RF Balanceado (Validação)
 
-Resultado final do modelo após o retreinamento com os dados combinados de treino e validação, aplicado sobre os dados inéditos de teste.
+<img width="671" height="547" alt="Matriz de Confusão - RF Balanceado" src="https://github.com/user-attachments/assets/7809f6ff-e286-4f36-a6f2-dbae128dc210" />
 
-* **Generalização:** O modelo manteve a consistência de predição, com acurácia de ~79% e ROC-AUC de 0.76.
-* **Equilíbrio:** Demonstra a capacidade do algoritmo em manter o desempenho em um ambiente de simulação real.
+**Objetivo:** Ajuste inicial de hiperparâmetros e threshold (0.35) para priorizar a sensibilidade ao churn.
 
+**Desempenho:** Identificou corretamente 185 casos de evasão, apresentando um equilíbrio entre a captura de clientes em risco e o volume de falsos positivos.
 
+---
+
+### 4. Matriz de Confusão - RF FINAL (Teste)
+
+<img width="658" height="547" alt="Matriz de Confusão - RF Final" src="https://github.com/user-attachments/assets/53f324f6-0498-4902-ac0e-5c51e7498443" />
+
+**Objetivo:** Validação da capacidade de generalização do modelo com dados inéditos, mantendo a estratégia de negócio.
+
+**Diferencial Técnico:** O modelo demonstrou alta estabilidade, aumentando a captura de churn real para 194 casos e reduzindo os erros de omissão (Falsos Negativos) de 222 para 213.
+
+**Conclusão:** A manutenção do número de Falsos Positivos (208) em ambos os cenários confirma que o modelo é robusto e não sofreu overfitting, garantindo previsões confiáveis para a tomada de decisão.
 
 ---
 
 ### 5. Importância das Variáveis (Interpretabilidade)
-**Arquivo:** `Top 10 Features Mais Importantes.png`
 
-Ranking dos atributos que mais influenciaram as decisões do modelo final.
+<img width="1189" height="790" alt="Top 10 Features Mais Importantes" src="https://github.com/user-attachments/assets/9371dfe0-1a32-4696-9634-af5a67e04d07" />
 
-* **Liderança:** A **Idade (`Age`)** é o fator preditivo mais robusto para o churn neste portfólio.
-* **Feature Engineering:** As variáveis derivadas `Age_Tenure` e `Balance_Salary_Ratio` figuram entre as mais importantes, validando a eficácia da engenharia de atributos realizada.
-* **Fatores Financeiros:** `EstimatedSalary` e `CreditScore` aparecem como indicadores secundários de alta relevância.
+Análise do ranking dos atributos que mais influenciaram as decisões do algoritmo **Random Forest**:
 
+**Liderança Absoluta:** A Idade (``Age``) consolida-se como o fator preditivo mais robusto, apresentando a maior importância relativa no modelo.
 
+**Sucesso da Engenharia de Dados**: As variáveis criadas ``Age_Tenure`` e ``Balance_Salary_Ratio`` figuram no Top 10, confirmando que a combinação de idade com tempo de casa e a relação saldo/salário agregaram valor preditivo inédito ao modelo.
 
----
+`**Preditores Secundários**: O comportamento financeiro, representado por ``EstimatedSalary``, ``CreditScore`` e ``Balance``, mantém uma relevância alta e equilibrada na tomada de decisão.
 
-## 🛠 Como atualizar os artefatos
-Para regenerar estes gráficos após alterações no modelo, execute o notebook principal e utilize o método `plt.savefig()` para exportar os arquivos diretamente para esta pasta:
+`**Influência Geográfica**: A localização (especialmente ``Geography_Germany``) surge como um fator demográfico relevante, superando variáveis como gênero na predição de churn.
 
-```python
-plt.savefig('docs/nome_do_arquivo.png', dpi=300, bbox_inches='tight')
+ <p align="right"><a href="../README.md">🔄 Voltar para a documentação completa</a></p>
