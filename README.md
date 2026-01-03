@@ -197,7 +197,7 @@ A API valida os dados antes de processar. Entradas fora do limite retornam ``HTT
 
 ---
 
-<h2 id="metricas" align="center">Métricas e Resultados do Modelo (Teste)</h2>
+<h2 id="metricas" align="center">Métricas e Resultados do Modelo</h2>
 
 O modelo final foi avaliado em uma base de teste (dados nunca vistos pelo modelo) para garantir sua capacidade de generalização. Abaixo, os indicadores de performance utilizando o **Threshold estratégico de 0.35**:
 
