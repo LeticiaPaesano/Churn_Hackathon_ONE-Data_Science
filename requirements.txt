@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+joblib
+pandas
+numpy
+scikit-learn==1.6.1           
+pydantic>=2.0,<3.0
+pyarrow
+pytest
+httpx
+python-multipart
+requests==2.31.0

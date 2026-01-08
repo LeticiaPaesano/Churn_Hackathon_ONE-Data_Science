@@ -1,0 +1,13 @@
+services:
+  tests:
+    build: .
+    command: pytest -v
+
+  api:
+    build: .
+    depends_on:
+      tests:
+        condition: service_completed_successfully
+    ports:
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
