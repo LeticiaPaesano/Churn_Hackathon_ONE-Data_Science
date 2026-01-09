@@ -348,7 +348,8 @@ uvicorn app.main:app --reload
 - 
 3️⃣ Rodar Testes Automatizados
 
-```pytest -v
+```
+pytest -v
 ```
 
 ---
