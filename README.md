@@ -138,9 +138,9 @@ As tecnologias utilizadas no projeto incluem:
 
 ```plaintext
 app/                      
-├── models/                 
-│   ├── model.joblib        # Modelo serializado
-│   └── __init__.py         
+├── models/
+│   ├── __init__.py           
+│   ├── model.joblib        # Modelo serializado         
 └── main.py                 # API FastAPI
 
 data/                       
