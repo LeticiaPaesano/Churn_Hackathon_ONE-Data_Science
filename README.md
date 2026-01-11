@@ -1,7 +1,8 @@
 <h1 id="inicio" align="center">
   ChurnInsight — Data Science<br>
   <img src="https://img.shields.io/badge/Status-Em%20desenvolvimento-yellow" alt="Status" width="180" height="30" />
-  <img src="https://img.shields.io/badge/Versão-1.2.1-blue" alt="Versão" width="100" height="30" />
+  <img src="https://img.shields.io/badge/Versão-1.2.1-blue" alt="Versão" width="89" height="30" />
+    <img src="https://img.shields.io/badge/Tests-5%2F5%20Passed-brightgreen" alt="Tests" width="111" height="30" />
 </h1>
 
 <h2 align="center">🔗 Repositórios Relacionados</h2>
@@ -181,14 +182,15 @@ stress_test.py
 ---
 <h2 id="dicionario" align="center">Dicionário de Dados</h2>
 
-| Coluna        | Descrição                         | Faixa Esperada                           |
-|---------------|-----------------------------------|------------------------------------------|
-| CreditScore   | Score financeiro do cliente       | 350 – 850                                 |
-| Geography     | País de origem do cliente         | France, Germany, Spain                   |
-| Age           | Idade do cliente                  | 18 – 92 anos                             |
-| Tenure        | Anos de relacionamento            | 0 – 10 anos                              |
-| Balance       | Saldo em conta                    | R$ 0 – 500.000                           |
-| Exited        | Target (indicador de churn)       | 1 = Sim (churn) / 0 = Não (permanece)    |
+|       Coluna        |  Tipo   |         Descrição           |   Faixa Esperada (Validação)   |
+| :-------------------| :-----: | :---------------------------| :------------------------------|
+| **CreditScore**     | `int`   | Score financeiro do cliente | 350 – 850                      |
+| **Geography**       | `str`   | País de origem              | `France`, `Germany` ou `Spain` |
+| **Gender**          | `str`   | Gênero do cliente           | `Male` ou `Female`             |
+| **Age**             | `int`   | Idade do cliente            | 18 – 92 anos                   |
+| **Tenure**          | `int`   | Anos de relacionamento      | 0 – 10 anos                    |
+| **Balance**         | `float` | Saldo em conta              | R$ 0 – 500.000                 |
+| **EstimatedSalary** | `float` | Salário anual estimado      | Decimal Positivo               |
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
@@ -206,11 +208,12 @@ O serviço de **Data Science (FastAPI)** fornece previsões de churn para o **Ba
 ### 🔁 Fluxo de Comunicação
 1. Backend envia JSON com dados do cliente para a API Python.
 2. A API executa a inferência usando `model.joblib`.
-3. Retorna `previsao`, `probabilidade`, `nivel_risco`, `recomendacao` e `explicabilidade`.
+3. Retorna `previsao`, `probabilidade`, `nivel_risco` e `explicabilidade`.
 
 📥 **Entrada**
 
 POST https://churn-hackathon.onrender.com/previsao
+
 Content-Type: application/json
 
 ```json
@@ -243,17 +246,25 @@ Content-Type: application/json
 
 <h2 id="metricas" align="center">Métricas e Resultados do Modelo</h2>
 
-O modelo final foi avaliado em uma base de teste (dados nunca vistos pelo modelo) para garantir sua capacidade de generalização. Abaixo, os indicadores de performance utilizando o **Threshold estratégico de 0.35**:
+O modelo final foi avaliado em uma base de teste (dados inéditos) para garantir sua capacidade de generalização. Os resultados refletem uma escolha estratégica para maximizar a retenção de clientes.
 
-| Métrica              | Valor      |
-| :--------------------| :--------- |
-| **ROC-AUC**          | **0.7669** |
-| **Acurácia**         | **79.00%** |
-| **Recall (Churn)**   | **47.91%** |
-| **Precisão (Churn)** | **48.39%** |
+### 🎯 Estratégia de Negócio (Threshold 0.35)
+Adotamos um **limite de decisão de 0.35** (em vez do padrão 0.50). Esta decisão técnica visa priorizar o **Recall** (Sensibilidade). Em problemas de Churn, o custo de perder um cliente é geralmente superior ao custo de uma ação de marketing preventiva. Portanto, ajustamos o modelo para ser mais sensível e identificar o maior número possível de clientes em risco.
 
+| Métrica              | Valor      | Impacto de Negócio                                                               |
+| :--------------------| :----------| :--------------------------------------------------------------------------------|
+| **ROC-AUC**          | **0.7669** | Indica uma boa capacidade do modelo em distinguir entre quem sai e quem fica.    |
+| **Acurácia**         | **79.00%** | Proporção global de acertos do modelo em ambas as classes.                       |
+| **Recall (Churn)**   | **47.91%** | Capacidade de identificar quase metade de todos os churns reais para intervenção.|
+| **Precisão (Churn)** | **48.39%** | Quase metade dos alertas gerados resultam em churns confirmados.                 |
 
-* 👉 [**Visualização Técnica dos Gráficos**](https://github.com/LeticiaPaesano/Churn_Hackathon/blob/main/docs/Documenta%C3%A7%C3%A3o%20T%C3%A9cnica%20de%20Visualiza%C3%A7%C3%B5es.md)
+### 🔍 Principais Insights do Modelo
+Mesmo sem visualizações nesta página, a análise de importância das variáveis revelou que:
+1. **Idade (`Age`)**: É o fator de maior peso; clientes mais velhos tendem a apresentar maior taxa de cancelamento.
+2. **Engenharia de Features**: Variáveis criadas pelo squad, como a relação saldo/salário, figuram entre os 10 principais preditores.
+3. **Geografia**: Clientes da Alemanha apresentam um comportamento de churn distinto das demais regiões.
+
+* 👉 [**Acesse aqui a Documentação Técnica de Visualizações**](https://github.com/LeticiaPaesano/Churn_Hackathon/blob/main/docs/Documenta%C3%A7%C3%A3o%20T%C3%A9cnica%20de%20Visualiza%C3%A7%C3%B5es.md)
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
@@ -339,9 +350,16 @@ Durante os testes de estresse local, a API manteve um consumo médio de **277MB 
 2️⃣ Via Python Local (Desenvolvimento)
 
 ```
+# 1. Criar ambiente virtual
+python -m venv venv
+# 2. Ativar (Linux/Mac) ou venv\Scripts\activate (Windows)
+source venv/bin/activate 
+# 3. Instalar dependências
 pip install -r requirements.txt
+# 4. Executar
 uvicorn app.main:app --reload
 ```
+
 - Certifique-se que `app/models/model.joblib` existe antes de iniciar a API.
 
 - O parâmetro `--reload` reinicia automaticamente a API ao alterar código (apenas para dev).
