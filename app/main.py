@@ -27,7 +27,7 @@ class ChurnPayload(BaseModel):
     Age: int = Field(..., ge=18, le=92)
     Tenure: int = Field(..., ge=0, le=10)
     Balance: float = Field(..., ge=0, le=500000)
-    EstimatedSalary: float
+    EstimatedSalary: float = Field(..., ge=0, le=200000)
 
 # =========================================================
 # APP
