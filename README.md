@@ -352,10 +352,13 @@ Durante os testes de estresse local, a API manteve um consumo médio de **277MB 
 ```
 # 1. Criar ambiente virtual
 python -m venv venv
+
 # 2. Ativar (Linux/Mac) ou venv\Scripts\activate (Windows)
-source venv/bin/activate 
+source venv/bin/activate
+
 # 3. Instalar dependências
 pip install -r requirements.txt
+
 # 4. Executar
 uvicorn app.main:app --reload
 ```
