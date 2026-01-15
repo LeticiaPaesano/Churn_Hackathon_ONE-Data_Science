@@ -23,7 +23,10 @@ Além dele, o projeto conta com os seguintes repositórios complementares:
 ---
 
 ### 🚀 API em Produção (Swagger UI)
-🔗 **[https://churn-hackathon.onrender.com/docs](https://churn-hackathon.onrender.com/docs)**
+
+🔗 **Produção Oficial (OCI): https://api-ds.duckdns.org/docs**  
+
+🔁 Ambiente alternativo: https://churn-hackathon.onrender.com/docs
 
 ⚠️ **Nota para o Squad:** A documentação interativa em `/docs` é a **Single Source of Truth** para o contrato da API. Verifique sempre os schemas antes de integrar.
 
@@ -44,7 +47,7 @@ Além dele, o projeto conta com os seguintes repositórios complementares:
 *   [Decisões Técnicas](#decisoes)
 *   [Como Executar a API](#como-executar)
 *   [Validação Técnica e Garantia de Qualidade](#validacao)
-*   [Deploy com Docker](#deploy)
+*   [Deploy com Docker, Render e OCI](#deploy)
 *   [Contribuições](#contribuicoes)
 *   [Licença](#licenca)
   
@@ -202,7 +205,7 @@ O serviço de **Data Science (FastAPI)** fornece previsões de churn para o **Ba
 
 ### 🛠 Artefatos de Integração
 - **model.joblib** — pipeline de ML serializado (modelo + pré-processamento).  
-- **API FastAPI** — endpoint `/previsao` exposto em produção via **Render**.  
+- API FastAPI — endpoint `/previsao` exposto em produção via OCI (com ambiente alternativo no Render).
 - **Dockerfile & Docker Compose** — garantem consistência do ambiente e facilitam execução local ou em nuvem.  
 
 ### 🔁 Fluxo de Comunicação
@@ -212,7 +215,7 @@ O serviço de **Data Science (FastAPI)** fornece previsões de churn para o **Ba
 
 📥 **Entrada**
 
-POST https://churn-hackathon.onrender.com/previsao
+POST https://api-ds.duckdns.org/previsao
 
 Content-Type: application/json
 
@@ -375,23 +378,28 @@ pytest -v
 
 ---
 
-<h2 id="deploy" align="center">Deploy com Docker e Render</h2>
+<h2 id="deploy" align="center">Deploy com Docker, Render e OCI</h2>
 
-A API é empacotada via Docker e publicada automaticamente no Render Cloud.
+A API é empacotada via Docker e publicada em ambientes de produção na nuvem.
 
-**Endpoints Importantes**
+### ☁️ Oracle Cloud Infrastructure (OCI) — Produção Oficial
+🔗 **https://api-ds.duckdns.org/docs**
 
-Health Check: 
+> Deploy final do projeto.  
+> Pipeline de integração com o Backend homologado e estável.
 
-```GET /health```
+### ☁️ Render — Ambiente Alternativo
+🔗 **https://churn-hackathon.onrender.com/docs**
 
-Documentação (Swagger): 
+---
 
-```/docs```
+### 🔌 Endpoints Importantes
 
-**Produção**
+Health Check:
+``GET /health``
 
-```https://churn-hackathon.onrender.com/docs```
+Documentação (Swagger UI)
+``/docs``
 
 <p align="right"><a href="#inicio">⬆️ Voltar ao início</a></p>
 
