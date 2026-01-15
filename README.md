@@ -1,6 +1,6 @@
 <h1 id="inicio" align="center">
   ChurnInsight — Data Science<br>
-  <img src="https://img.shields.io/badge/Status-Em%20desenvolvimento-yellow" alt="Status" width="180" height="30" />
+  <img src="https://img.shields.io/badge/Status-Concluído-brightgreen" alt="Status" width="111" height="30" />
   <img src="https://img.shields.io/badge/Versão-1.2.1-blue" alt="Versão" width="89" height="30" />
     <img src="https://img.shields.io/badge/Tests-5%2F5%20Passed-brightgreen" alt="Tests" width="111" height="30" />
 </h1>
